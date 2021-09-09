@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31613.86
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostBotPrime", "PostBotPrime\PostBotPrime.csproj", "{313F0C74-3D36-453C-B928-52BCEE3A2985}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{313F0C74-3D36-453C-B928-52BCEE3A2985}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{313F0C74-3D36-453C-B928-52BCEE3A2985}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{313F0C74-3D36-453C-B928-52BCEE3A2985}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{313F0C74-3D36-453C-B928-52BCEE3A2985}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D6C53EA7-D2F3-457A-8B45-542A19FA410C}
+	EndGlobalSection
+EndGlobal
