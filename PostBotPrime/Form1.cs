@@ -19,12 +19,11 @@ namespace PostBotPrime
     public partial class Form1 : Form
     {
         _Pbox testbox = new _Pbox(@"Post one aeiou aeiou"    , 100000, 123456789, new PointF(0, 0), 0);
-        _Pbox testbox2 = new _Pbox(@" 
+        _Pbox testbox2 = new _Pbox(@" fsregserserfserfserfserfrefserfserfseffdfsfxsefxsefxsxsxsxsxrexscxddddddddddddddddddddddddddddddddddddddddddddddddddddd
 Wtf ? "
             , 100000, 123456789, new PointF(0, 0), 1);
         _Pbox testbox3 = new _Pbox(@">>63418245
-Any decent program includes hinge and calf work. But even that isn’t enough imo. Calisthenics really suffers from a lack of low body scaleability. There’s not an easy way of working out hips, abductors, and the tibialis with bodyweight.
-Though frankly that’s a problem with most male /fit/izens. Not enough lower body focus. "
+Any decent program includes hinge and calf wor enough lower body focus. "
             , 100000, 123456789, new PointF(0, 0), 2);
         _Pbox testbox4 = new _Pbox(@"In the end of knee raises, would it be a good idea to do another little movement where I contract the abs a bit more and lift my lower body a bit up/forward? "
             , 100000, 123456789, new PointF(0, 0), 0);
@@ -37,7 +36,7 @@ Though frankly that’s a problem with most male /fit/izens. Not enough lower bo
         float tickdelta = 1000 / 60;
         float frameincrease = 1f;
         float frames = 0;
-        float framedata = 0;
+        float stopbuffer = 10;
         int buffer = 5;
         PointF Origin = new PointF(0, 0);
         PointF RollingOrigin = new PointF(0, 0);
@@ -47,7 +46,7 @@ Though frankly that’s a problem with most male /fit/izens. Not enough lower bo
         SpeechSynthesizer Voice1 = new SpeechSynthesizer();
         
         
-        int p = -1;
+        int p = 0;
 
 
         // Artkit
@@ -128,17 +127,13 @@ Though frankly that’s a problem with most male /fit/izens. Not enough lower bo
                 RollingOrigin.Y = (0 + buffer);
             }
 
-                //drawing posts area
+
+            //drawing posts area
             for (int i = 0; i < loaderposts.Length; i++) 
             {
                 //origin set
-               
-                if (loaded == false)
-                {
-                    DrawOrigin = new PointF(0, testbox.Dorigin.Y + RollingOrigin.Y);
-                    scrollpoints.Add(DrawOrigin);
-                    loaderposts[i].Dorigin = DrawOrigin;
-                }
+              DrawOrigin = new PointF(0, testbox.Dorigin.Y + RollingOrigin.Y);  
+
                 
                
                 
@@ -160,6 +155,38 @@ Though frankly that’s a problem with most male /fit/izens. Not enough lower bo
 
 
             PostOrigin.Y =+ RollingOrigin.Y;
+
+            //inital post origin objects
+            if (loaded == false)
+            {
+                scrollpoints.Add(PostOrigin);
+
+            }
+
+
+            //if scrolling check if we passed the next checkpoint
+            if (Scrolling == true && loaded == true && p < 0) // p less then 0 for inital post
+            {
+                if (-RollingOrigin.Y > (scrollpoints[p + 1].Y - stopbuffer))
+                {
+                    Scrolling = false;
+                }
+            }
+            else if (Scrolling == true && loaded == true && p <= scrollpoints.Count) // midrolling
+            {
+                if (-RollingOrigin.Y > scrollpoints[p - 1].Y - stopbuffer)
+                {
+                    Scrolling = false;
+                }
+
+            }
+            else if (loaded == true && p == scrollpoints.Count - 1) // endstop
+            {
+                if (-RollingOrigin.Y > scrollpoints[p-1].Y - stopbuffer)
+                {
+                    Scrolling = false;
+                }
+            }
 
             //inital check for replychain object
             if (POST.ReplyDepth > 0)
@@ -240,26 +267,23 @@ Though frankly that’s a problem with most male /fit/izens. Not enough lower bo
         public void ReadNextPost(object sender, EventArgs e)
         {
             _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4 };
-            p++;
-            if (p <= loaderposts.Length -1)
+            
+            if (p < loaderposts.Length-1)
             {
-
-
                 panel1.Invalidate();
-
                 Scrolling = true;
-                
                  Voice1.SpeakAsync(loaderposts[p].Comment);
-
-               if(RollingOrigin.Y < scrollpoints[p].Y)
-               {
-                Scrolling = false;
-                }
-
+                 p++;
        
-                Voice1.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);
             }
+            else if (p < loaderposts.Length)
+            {
+                Scrolling = true;
 
+                 Voice1.SpeakAsync(loaderposts[p].Comment);
+                p++;
+            }
+                Voice1.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);        
         }
 
        private void Form1_Load(object sender, EventArgs e)
