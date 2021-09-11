@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace designUI
+namespace PostBotPrime
 {
     static class Program
     {
@@ -18,6 +18,9 @@ namespace designUI
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());
+           // Application.Run(new Speech());
+          
+
         }
     }
 }
