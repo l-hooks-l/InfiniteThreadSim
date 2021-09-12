@@ -18,7 +18,7 @@ namespace PostBotPrime
 {
     public partial class Form1 : Form
     {
-        _Pbox testbox = new _Pbox(@"Post one aeiou aeiou"    , 100000, 123456789, new PointF(0, 0), 0);
+        _Pbox testbox = new _Pbox(@"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam gravida sem sem, vel suscipit velit convallis eleifend. Fusce quis tempus lectus, nec euismod odio. Phasellus tristique, sapien a semper sagittis, lectus nunc vulputate felis, a facilisis dui arcu ut augue.", 100000, 123456789, new PointF(0, 0), 0);
         _Pbox testbox2 = new _Pbox(@" fsregserserfserfserfserfrefserfserfseffdfsfxsefxsefxsxsxsxsxrexscxddddddddddddddddddddddddddddddddddddddddddddddddddddd
 Wtf ? "
             , 100000, 123456789, new PointF(0, 0), 1);
@@ -30,6 +30,10 @@ Any decent program includes hinge and calf wor enough lower body focus. "
         _Pbox testbox5 = new _Pbox(@">>63418245
 Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody focus. "
     , 100000, 123456789, new PointF(0, 0), 2);
+
+        public string LoadDirectory = "";
+
+
 
         //class declares
         bool Scrolling = false;

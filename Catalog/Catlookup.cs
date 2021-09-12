@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -15,6 +16,8 @@ namespace Catalog
         private const string api_url = @"https://a.4cdn.org/";
         private const string api_img_url = @"https://i.4cdn.org/";
         private static Int32 ReplyThreshold = 30;
+        private static string SaveDirectory = "";
+
         static void Main()
         {
             System.Console.Title = "Board Inspector";
@@ -41,13 +44,45 @@ namespace Catalog
             }
             Console.WriteLine("|||   loading threads");
             _LoadedBoardFabric loadedboard = await ThreadLoader(_Tlist);
+               ParsePosts(loadedboard);
+
             for (int i = 0; i < loadedboard.LThreads.Count; i++)
             {
                 Console.WriteLine(@"***************" + loadedboard.LThreads[i].Semantic + " | " + loadedboard.LThreads[i].JSON);
+                
+
 
             }
         }
 
+        public static async Task<> ParsePosts(_LoadedBoardFabric boardfabric)
+        {
+
+            Tree replytree = new Tree();
+
+
+            for (int i = 0; i < boardfabric.LThreads.Count; i++)
+            {
+
+
+                string json = boardfabric.LThreads[i].JSON;
+                var posts = JObject.Parse(json)["posts"].ToObject<JArray>();
+                string postCom = posts[i]["com"].ToString();
+                int postID = Int32.Parse(posts[i]["no"].ToString());
+                int postUnix = Int32.Parse(posts[i]["time"].ToString());
+              // string postCom = posts[i]["com"].ToString();
+
+
+
+
+                replytree = replies(postCom, replytree);
+                _Pbox postbox = new _Pbox(postCom, postID, postUnix, new PointF(0,0), 0);
+
+
+            }
+
+
+        }
 
         public static async Task<ThreadList> LoadCatalog(string BOARD)
         {
@@ -131,6 +166,65 @@ namespace Catalog
             Console.WriteLine(@"                                                ");
             Console.WriteLine(@"              Choose a Board                    ");
             return System.Console.ReadLine();
+        }
+
+        public static Tree replies(string postContent, Tree replytree)
+        {
+            //IDictionary<int,int> postreplies = new IDictionary<int,int>();
+            if (postContent.Contains(">>") && postContent.Contains(" "))
+            {
+                int Start, End;
+                int data = 1;
+                string datacheck = "";
+                int lastreply = 1;
+                bool crossthread = false;
+                Start = postContent.IndexOf(">>", 0) + 2;
+
+
+                do
+                {
+                    End = postContent.IndexOf(" ", Start);
+                    datacheck = postContent.Substring(Start, End - Start);
+
+                    if (datacheck.IndexOf(">") != -1)
+                    {
+                        Console.WriteLine("crossthread detected");
+                        crossthread = true;
+
+                    }
+                    data = Int32.Parse(postContent.Substring(Start, End - Start));
+
+
+
+
+
+                    if (replytree.getNode(data) == null && data != 0) //new unique reply
+                    {
+                        Node newroot = new Node();
+                        newroot.id = data;
+                        newroot.addParent(data);
+                        replytree.addRoot(newroot);
+                        lastreply = data;
+
+                    }
+                    else if (replytree.getNode(data) != null && data != lastreply) //parent node contained in tree already
+                    {
+                        Node newnode = new Node();
+                        newnode.id = data;
+                        newnode.addParent(data);
+                        replytree.addNode(newnode);
+                        lastreply = data;
+                    }
+
+                    Start = postContent.IndexOf(">>", End) + 2;
+                    crossthread = false;
+
+                }
+                while (Start != 1);
+
+               //  return replytree;
+            }
+            return replytree;
         }
 
         public static int ThreadWeight(Int32 replycount, Int32 imagecount, Dictionary<string, int> WordBank, string semantic)
@@ -328,7 +422,7 @@ namespace Catalog
 
         string message { get; set; }
 
-        Node parent { get; set; }
+        List<Node> parent { get; set; }
 
         List<Node> children { get; }
 
@@ -337,13 +431,14 @@ namespace Catalog
         public Node()
         {
             this.children = new List<Node>();
+            this.parent = new List<Node>();
         }
 
-        public void addParent(int id)
+        public void addParent(int id) // gets parent node from parent id, then adds this node as parents child
         {
             Node parent = this.tree.getNode(id);
-            this.parent = parent;
-            this.parent.children.Add(this);
+            this.parent[id] = parent;
+            this.parent[id].children.Add(this);
         }
     }
 
@@ -358,24 +453,45 @@ namespace Catalog
             node_dict = new Dictionary<int, Node>();
         }
 
-        public void addNode(Node node)
+        public void addNode(Node node) //adds node to node dict and sets its active tree
         {
             node_dict.Add(node.id, node);
             node.tree = this;
         }
 
-        public Node getNode(int id)
+        public Node getNode(int id) //grabs node from nodeid dictionary
         {
             return node_dict[id];
         }
 
-        public void addRoot(Node node)
+        public void addRoot(Node node) // adds node to root list, and adds node to node dictionary
         {
             this.addNode(node);
             this.roots.Add(node);
+            node.tree = this;
         }
 
     }
+
+    public class _Pbox
+    {
+        public string Comment { get; private set; }
+        public int PostID { get; private set; }
+        public int Unix { get; private set; }
+        public int ReplyDepth { get; private set; }
+        public PointF Dorigin { get; set; }
+
+        public _Pbox(string Com, int postid, int unix, PointF draworigin, int replydepth)
+        {
+            Comment = Com;
+            PostID = postid;
+            Unix = unix;
+            Dorigin = draworigin;
+            ReplyDepth = replydepth;
+        }
+
+    }
+
 }
 
 
