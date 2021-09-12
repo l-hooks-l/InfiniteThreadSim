@@ -102,7 +102,7 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
             public string Comment { get; private set; }
             public int PostID { get; private set; }
             public int Unix { get; private set; }
-            public int ReplyDepth { get; private set; }
+            public int ReplyDepth { get; set; }
             public PointF Dorigin { get; set; }
 
             public _Pbox(string Com, int postid, int unix, PointF draworigin, int replydepth)
@@ -289,7 +289,7 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
                 
 
                  Voice1.SpeakAsync(loaderposts[p].Comment);
-Scrolling = true;
+                Scrolling = true;
                 p++;
             }
                 Voice1.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);        

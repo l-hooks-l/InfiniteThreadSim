@@ -22,7 +22,7 @@ namespace Catalog
         {
             System.Console.Title = "Board Inspector";
             Menu().GetAwaiter().GetResult();
-        } 
+        }
 
         private static async Task Menu()
         {
@@ -44,27 +44,31 @@ namespace Catalog
             }
             Console.WriteLine("|||   loading threads");
             _LoadedBoardFabric loadedboard = await ThreadLoader(_Tlist);
-               ParsePosts(loadedboard);
+            ParsePosts(loadedboard);
 
             for (int i = 0; i < loadedboard.LThreads.Count; i++)
             {
                 Console.WriteLine(@"***************" + loadedboard.LThreads[i].Semantic + " | " + loadedboard.LThreads[i].JSON);
-                
+
 
 
             }
         }
 
-        public static async Task<> ParsePosts(_LoadedBoardFabric boardfabric)
+        public static async Task<_Pbox[]> ParsePosts(_LoadedBoardFabric boardfabric)
         {
 
             Tree replytree = new Tree();
+            _Pbox[] postarray = new _Pbox[0];
+            _Pbox[] SortedDisplayList = new _Pbox[0];
+                string pattern = @"<br><br>";
+                string replacement = " ";
+                Regex breakpoints = new Regex(pattern);
+            Dictionary<string, int> threadbank = wordBankCompiler(boardfabric.Board);
 
 
             for (int i = 0; i < boardfabric.LThreads.Count; i++)
             {
-
-
                 string json = boardfabric.LThreads[i].JSON;
                 var posts = JObject.Parse(json)["posts"].ToObject<JArray>();
                 string postCom = posts[i]["com"].ToString();
@@ -72,15 +76,49 @@ namespace Catalog
                 int postUnix = Int32.Parse(posts[i]["time"].ToString());
               // string postCom = posts[i]["com"].ToString();
 
+                 string postComBroken = breakpoints.Replace(postCom, replacement);
+                string pureCOM = "";
 
+                if (posts[i]["no"].ToString() != null && posts[i]["com"] != null)  //html agility pack and encoding fix
+                {
+                    var htmldoc = new HtmlAgilityPack.HtmlDocument();
+                    var html = postComBroken;
+                    if (html != null)
+                    {
 
+                        htmldoc.LoadHtml(html);
+                        var htmlparsed = htmldoc.DocumentNode.InnerText;
+                        pureCOM = WebUtility.HtmlDecode(htmlparsed);
 
-                replytree = replies(postCom, replytree);
-                _Pbox postbox = new _Pbox(postCom, postID, postUnix, new PointF(0,0), 0);
+                    }
+                }
 
+                var postweight = PostWeight(threadbank, pureCOM);
+
+                replytree = replies(pureCOM, replytree);  //reply tree creation
+
+                _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), 0);
+
+                if(isreply == true)
+                {
+
+         
+                postbox.ReplyDepth = replydepth(postbox, replytree);
+                }
+                if (postweight > 0)
+                {
+                 
+
+                    postarray.Append(postbox);
+                }
+
+                //_Pbox[] SortedDisplayList = new _Pbox[0];
 
             }
 
+            SortedDisplayList = replysort(postarray, replytree);
+
+            return SortedDisplayList;
 
         }
 
@@ -227,6 +265,18 @@ namespace Catalog
             return replytree;
         }
 
+        public static _Pbox[] replysort(_Pbox[] unsortedposts,Tree replytree)
+        {
+
+
+        }
+        public static int replydepth(_Pbox post, Tree replytree)
+        {
+
+
+
+        }
+
         public static int ThreadWeight(Int32 replycount, Int32 imagecount, Dictionary<string, int> WordBank, string semantic)
         {
             int collectiveMulti = 1;
@@ -250,6 +300,29 @@ namespace Catalog
             return trueweight;
         }
 
+        public static int PostWeight(Dictionary<string, int> WordBank, string content)
+        {
+            int collectiveMulti = 1;
+            foreach (KeyValuePair<string, int> kvp in WordBank)
+            {
+                var keywords = kvp.Key;
+                Regex RX = new Regex(@keywords);
+ 
+                if (RX.IsMatch(content) == true)
+                {
+                    MatchCollection matches = RX.Matches(content);
+                    collectiveMulti = (kvp.Value*matches.Count) + collectiveMulti;
+                    //   Console.WriteLine("collective multi " + collectiveMulti);
+                }
+
+            }
+
+            var replydiff = 10;
+            var preMulti = replydiff ^ 3 / 2;
+            var trueweight = preMulti * (1 + collectiveMulti / 4);
+
+            return trueweight;
+        }
 
         public static async Task<_LoadedBoardFabric> ThreadLoader(ThreadList _Tlist)
         {
@@ -478,7 +551,7 @@ namespace Catalog
         public string Comment { get; private set; }
         public int PostID { get; private set; }
         public int Unix { get; private set; }
-        public int ReplyDepth { get; private set; }
+        public int ReplyDepth { get; set; }
         public PointF Dorigin { get; set; }
 
         public _Pbox(string Com, int postid, int unix, PointF draworigin, int replydepth)
