@@ -27,6 +27,9 @@ Any decent program includes hinge and calf wor enough lower body focus. "
             , 100000, 123456789, new PointF(0, 0), 2);
         _Pbox testbox4 = new _Pbox(@"In the end of knee raises, would it be a good idea to do another little movement where I contract the abs a bit more and lift my lower body a bit up/forward? "
             , 100000, 123456789, new PointF(0, 0), 0);
+        _Pbox testbox5 = new _Pbox(@">>63418245
+Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody focus. "
+    , 100000, 123456789, new PointF(0, 0), 2);
 
         //class declares
         bool Scrolling = false;
@@ -34,9 +37,9 @@ Any decent program includes hinge and calf wor enough lower body focus. "
         int MsTicks = 50;
         float ticks = 0.0f;
         float tickdelta = 1000 / 60;
-        float frameincrease = 1f;
+        float frameincrease = 2f;
         float frames = 0;
-        float stopbuffer = 10;
+        float stopbuffer = 400;
         int buffer = 5;
         PointF Origin = new PointF(0, 0);
         PointF RollingOrigin = new PointF(0, 0);
@@ -113,7 +116,7 @@ Any decent program includes hinge and calf wor enough lower body focus. "
         {
            // e.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
             //test array
-            _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4 };
+            _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4, testbox5 };
 
            
 
@@ -266,21 +269,23 @@ Any decent program includes hinge and calf wor enough lower body focus. "
 
         public void ReadNextPost(object sender, EventArgs e)
         {
-            _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4 };
+            _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4 , testbox5};
             
             if (p < loaderposts.Length-1)
             {
                 panel1.Invalidate();
-                Scrolling = true;
+             
                  Voice1.SpeakAsync(loaderposts[p].Comment);
+                    Scrolling = true;
                  p++;
        
             }
             else if (p < loaderposts.Length)
             {
-                Scrolling = true;
+                
 
                  Voice1.SpeakAsync(loaderposts[p].Comment);
+Scrolling = true;
                 p++;
             }
                 Voice1.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);        
@@ -288,11 +293,11 @@ Any decent program includes hinge and calf wor enough lower body focus. "
 
        private void Form1_Load(object sender, EventArgs e)
         {
-            SpeechSynthesizer Voice1 = new SpeechSynthesizer();
+           // SpeechSynthesizer Voice1 = new SpeechSynthesizer();
             Voice1.SetOutputToDefaultAudioDevice();
             Voice1.SelectVoiceByHints(VoiceGender.Male);
-
-            _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4 };
+            Voice1.Rate = 4;
+            _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4, testbox5 };
            
 
             //start first post, then event
