@@ -99,16 +99,12 @@ namespace Catalog
 
                 _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), 0);
 
-                if(isreply == true)
-                {
 
-         
                 postbox.ReplyDepth = replydepth(postbox, replytree);
-                }
+                
                 if (postweight > 0)
                 {
-                 
-
+            
                     postarray.Append(postbox);
                 }
 
@@ -267,14 +263,52 @@ namespace Catalog
 
         public static _Pbox[] replysort(_Pbox[] unsortedposts,Tree replytree)
         {
+            _Pbox[] SortedPosts = new _Pbox[0];
+            foreach (_Pbox upost in unsortedposts)
+            {
 
 
+                if(upost.ReplyDepth == 0) //if post is original
+                {
+                    SortedPosts.Append<_Pbox>(upost);
+                    //loop through all children and amend them to sorted posts
+                   SortedPosts = childloop(upost.PostID, replytree, SortedPosts, unsortedposts);
+                }
+                else //if the post is a reply
+                {
+                    
+                }
+
+            }
+
+            return SortedPosts;
         }
         public static int replydepth(_Pbox post, Tree replytree)
         {
+            var depth = 0;
+           Node node = replytree.getNode(post.PostID);
+            if(node.getparents() != null) //node has parents and not tree root
+            {
+            List<Node> parents = node.getparents();
+
+                depth = parents[0].replydepth + 1;
+                return depth;
+            }
+            return 0;  
 
 
-
+        }
+        public static _Pbox[] childloop(int post, Tree replytree, _Pbox[] SortedPosts, _Pbox[] UnsortedPosts)
+        {
+            if (replytree.getNode(post).getchildren() != null )//if there is children
+            {
+                foreach (Node n in replytree.getNode(post).getchildren()) //for each child
+                {
+                   SortedPosts.Append<_Pbox>(UnsortedPosts[n.id]); //add this child to sorted list
+                   SortedPosts = childloop(n.id, replytree, SortedPosts, UnsortedPosts); //check this child for children
+                }
+            }
+            return SortedPosts;
         }
 
         public static int ThreadWeight(Int32 replycount, Int32 imagecount, Dictionary<string, int> WordBank, string semantic)
@@ -500,11 +534,14 @@ namespace Catalog
         List<Node> children { get; }
 
         public Tree tree { get; set; }
+        public int replydepth { get; set; }
+
 
         public Node()
         {
             this.children = new List<Node>();
             this.parent = new List<Node>();
+            this.replydepth = 0;
         }
 
         public void addParent(int id) // gets parent node from parent id, then adds this node as parents child
@@ -512,6 +549,23 @@ namespace Catalog
             Node parent = this.tree.getNode(id);
             this.parent[id] = parent;
             this.parent[id].children.Add(this);
+        }
+        public List<Node> getparents() //grabs node from nodeid dictionary
+        {
+            if (parent != null)
+            {
+                return parent;
+            }
+            return null;
+
+        }
+        public List<Node> getchildren() //grabs node from nodeid dictionary
+        {
+            if (children != null)
+            {
+                return children;
+            }
+            return null;
         }
     }
 

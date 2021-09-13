@@ -74,7 +74,7 @@ namespace PostBotPrime
             this.Controls.Add(this.panel1);
             this.DoubleBuffered = true;
             this.Name = "Form1";
-            this.Text = "Form1";
+            this.Text = "BoardInspector Alpha #Mint Edition#";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Form1_Paint);
             this.ResumeLayout(false);
