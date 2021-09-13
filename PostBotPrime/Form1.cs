@@ -13,6 +13,7 @@ using System.Timers;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Speech.Synthesis;
+using System.Drawing.Drawing2D;
 
 namespace PostBotPrime
 {
@@ -57,17 +58,39 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
 
 
         // Artkit
-        Pen mypen = new Pen(Color.White);
-        Pen pen2 = new Pen(Color.White);
-        Pen pen3 = new Pen(Color.White);
+        Pen mypen = new Pen(Color.FromArgb(255,106,0,128), 2f);
+       LinearGradientBrush LGbrush = new LinearGradientBrush(new Point(0,0),new Point(100,100),
+       Color.FromArgb(255, 152, 255, 152),   // 
+       Color.FromArgb(255, 152, 152, 255));  
+
+        LinearGradientBrush BGbrush = new LinearGradientBrush(new Point(1000, 1000),new Point(0, 0),
+       Color.FromArgb(255, 255, 0, 255),   // Opaque red
+       Color.FromArgb(255, 152, 152, 255));  // Opaque blue)
+
+     LinearGradientBrush Vanbrush = new LinearGradientBrush(new Point(0, 0), new Point(500, 500),
+Color.FromArgb(255, 152, 255, 152),   // 
+Color.FromArgb(255, 152, 152, 255));
+
+        LinearGradientBrush Van2brush = new LinearGradientBrush(new Point(0, 0), new Point(1000, 500),
+Color.FromArgb(255, 152, 255, 152),   // 
+Color.FromArgb(255, 152, 152, 255));
+
+        Font stylefont;
+        
+
+        //Pen lgpen = new Pen(LGbrush);
+        Pen mypen2 = new Pen(Color.FromArgb(255, 106, 0, 128));
         private PointF DrawOrigin;
 
         public Form1()
         {
 
 
-
+  
             InitializeComponent();
+          Font tempfont = new Font(panel1.Font,FontStyle.Regular);
+          stylefont = tempfont;
+           
 
             System.Timers.Timer Ftimer = new System.Timers.Timer(MsTicks);
             Ftimer.Elapsed += OnTimedEvent;
@@ -122,7 +145,13 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
             //test array
             _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4, testbox5 };
 
-           
+            Graphics g = e.Graphics;
+            Point origin = new Point(0, 0);
+            Size formsize = new Size(this.Width, this.Height);
+            Rectangle bg = new Rectangle(origin, formsize);
+
+
+            g.FillRectangle(BGbrush, bg);
 
 
             if (Scrolling == true)
@@ -249,15 +278,17 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
             Rectangle textbounds = new Rectangle((int)TextOrigin.X,(int)TextOrigin.Y, (int)TextSize.Width, (int)TextSize.Height);
             Rectangle headerbounds = new Rectangle((int)HeaderOrigin.X, (int)HeaderOrigin.Y, (int)HeaderSize.Width, (int)HeaderSize.Height);
 
-
+            g.FillRectangle(Van2brush, PostOrigin.X, PostOrigin.Y, PostSize.Width, PostSize.Height);
             g.DrawRectangle(mypen, PostOrigin.X, PostOrigin.Y, PostSize.Width, PostSize.Height);
+
             g.DrawRectangle(mypen, ImageOrigin.X, ImageOrigin.Y, ImageSize.Width, ImageSize.Height);
             //g.DrawRectangle(mypen, TextOrigin.X, TextOrigin.Y, TextSize.Width, TextSize.Height);
             g.DrawRectangle(mypen, HeaderOrigin.X, HeaderOrigin.Y, HeaderSize.Width, HeaderSize.Height);
 
+
             // g.DrawRectangle(mypen, PostOrigin.X, PostOrigin.Y, PostSize.Width, PostSize.Height);
-            TextRenderer.DrawText(g, POST.Comment, panel1.Font, textbounds, Color.White, panel1.BackColor, flags);
-            TextRenderer.DrawText(g, header, panel1.Font, headerbounds, Color.White, panel1.BackColor, flags);
+            TextRenderer.DrawText(g, POST.Comment, stylefont, textbounds, mypen2.Color, Color.Transparent, flags);
+            TextRenderer.DrawText(g, header, stylefont, headerbounds, mypen2.Color, Color.Transparent, flags);
 
             //next posts origin set
             RollingOrigin.Y = (RollingOrigin.Y + PostBox.Height + buffer);
@@ -311,7 +342,44 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
 
         }
 
+        private void Form1_Paint(object sender, PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            Point origin = new Point(0, 0);
+            Size formsize = new Size(this.Width, this.Height);
+            Rectangle bg = new Rectangle(origin, formsize);
 
+
+         g.FillRectangle(BGbrush,bg);
+
+        }
+
+        private void panel3_Paint(object sender, PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            Point origin = new Point(0, 0);
+            Size formsize = new Size((this.panel3.Width - 1), (this.panel3.Height - 1));
+            Size formborder = new Size(this.panel3.Width, this.panel3.Height);
+            Rectangle bg = new Rectangle(origin, formborder);
+            Rectangle brd = new Rectangle(origin, formsize);
+            g.FillRectangle(Vanbrush, bg);
+            g.DrawRectangle(mypen, brd);
+        }
+
+        private void panel2_Paint(object sender, PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            Point origin = new Point(0, 0);
+            Size formsize = new Size((this.panel2.Width-1), (this.panel2.Height-1));
+            Size formborder = new Size(this.panel2.Width, this.panel2.Height);
+            Rectangle bg = new Rectangle(origin, formborder);
+            Rectangle brd = new Rectangle(origin, formsize);
+
+            g.FillRectangle(Vanbrush, bg);
+           // g.DrawRectangle(mypen2, bg);
+            g.DrawRectangle(mypen, brd);
+
+        }
     }
             
 }

@@ -52,6 +52,7 @@ namespace PostBotPrime
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(152, 146);
             this.panel2.TabIndex = 1;
+            this.panel2.Paint += new System.Windows.Forms.PaintEventHandler(this.panel2_Paint);
             // 
             // panel3
             // 
@@ -60,6 +61,7 @@ namespace PostBotPrime
             this.panel3.Name = "panel3";
             this.panel3.Size = new System.Drawing.Size(152, 416);
             this.panel3.TabIndex = 2;
+            this.panel3.Paint += new System.Windows.Forms.PaintEventHandler(this.panel3_Paint);
             // 
             // Form1
             // 
@@ -74,6 +76,7 @@ namespace PostBotPrime
             this.Name = "Form1";
             this.Text = "Form1";
             this.Load += new System.EventHandler(this.Form1_Load);
+            this.Paint += new System.Windows.Forms.PaintEventHandler(this.Form1_Paint);
             this.ResumeLayout(false);
 
         }
