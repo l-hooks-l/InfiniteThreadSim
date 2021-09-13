@@ -14,6 +14,8 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Speech.Synthesis;
 using System.Drawing.Drawing2D;
+using System.IO;
+using Newtonsoft.Json;
 
 namespace PostBotPrime
 {
@@ -32,7 +34,7 @@ Any decent program includes hinge and calf wor enough lower body focus. "
 Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody focus. "
     , 100000, 123456789, new PointF(0, 0), 2);
 
-        public string LoadDirectory = "";
+        public string LoadDirectory = @"C:\Users\Nathan\Documents\ChanJson";
 
 
 
@@ -49,13 +51,13 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
         PointF Origin = new PointF(0, 0);
         PointF RollingOrigin = new PointF(0, 0);
         List<PointF> scrollpoints = new List<PointF>();
-
+        _Pbox[] loadedthread;
 
         SpeechSynthesizer Voice1 = new SpeechSynthesizer();
         
         
         int p = 0;
-
+        int f = 0;
 
         // Artkit
         Pen mypen = new Pen(Color.FromArgb(255,106,0,128), 2f);
@@ -84,10 +86,20 @@ Color.FromArgb(255, 152, 152, 255));
 
         public Form1()
         {
+            
 
-
-  
+            var files = Directory.GetFiles(LoadDirectory);
+            if (files.Length != 0)
+            {
+                loadedthread = Loadfile(files[f]);
+            }
+            else
+            {
+                loadedthread = new _Pbox[] { testbox, testbox2,testbox3,testbox4,testbox5 };
+            }
             InitializeComponent();
+
+
           Font tempfont = new Font(panel1.Font,FontStyle.Regular);
           stylefont = tempfont;
            
@@ -141,9 +153,9 @@ Color.FromArgb(255, 152, 152, 255));
 
         private void panel1_Paint(object sender, PaintEventArgs e)
         {
-           // e.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+            // e.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
             //test array
-            _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4, testbox5 };
+            _Pbox[] loaderposts = loadedthread;
 
             Graphics g = e.Graphics;
             Point origin = new Point(0, 0);
@@ -302,6 +314,23 @@ Color.FromArgb(255, 152, 152, 255));
                 null, control, new object[] { true });
         }
 
+        public static void Save(_Pbox[] sorted, string path)
+        {
+            using (var writer = new StreamWriter(path))
+            {
+                writer.Write(JsonConvert.SerializeObject(sorted));
+            }
+
+        }
+        public _Pbox[] Loadfile(string path)
+        {
+            using (var reader = new StreamReader(path))
+            {
+                return JsonConvert.DeserializeObject<_Pbox[]>(reader.ReadToEnd());
+            }
+
+        }
+
         public void ReadNextPost(object sender, EventArgs e)
         {
             _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4 , testbox5};
@@ -323,6 +352,7 @@ Color.FromArgb(255, 152, 152, 255));
                 Scrolling = true;
                 p++;
             }
+
                 Voice1.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);        
         }
 
@@ -381,5 +411,7 @@ Color.FromArgb(255, 152, 152, 255));
 
         }
     }
-            
+
+  
+
 }
