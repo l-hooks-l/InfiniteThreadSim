@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -6,6 +7,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace Catalog
 {
@@ -16,7 +18,7 @@ namespace Catalog
         private const string api_url = @"https://a.4cdn.org/";
         private const string api_img_url = @"https://i.4cdn.org/";
         private static Int32 ReplyThreshold = 30;
-        private static string SaveDirectory = "";
+        private static string SaveDirectory = @"C:\Users\Nathan\Documents\ChanJson";
 
         static void Main()
         {
@@ -44,7 +46,28 @@ namespace Catalog
             }
             Console.WriteLine("|||   loading threads");
             _LoadedBoardFabric loadedboard = await ThreadLoader(_Tlist);
-            ParsePosts(loadedboard);
+
+             LoomedFabric SortedBoardArray = ParsePosts(loadedboard);
+
+
+            if (SaveDirectory.Equals(string.Empty)) SaveDirectory = $"{Directory.GetCurrentDirectory()}\\{SortedBoardArray.board}";
+            else SaveDirectory = $"{SaveDirectory}\\{SortedBoardArray.board}";
+            Directory.CreateDirectory(SaveDirectory); //creates location for downloaded images
+            foreach (DisplayThread displayThread in SortedBoardArray.displayThreads)
+            {
+                string filename = displayThread.id.ToString();
+                if(Directory.GetFiles(SaveDirectory).Contains(filename)) //if thread instance is already saved to disk  overwrite
+                {
+                    SaveLoad.Save(displayThread.sortedthread, filename);
+                }
+                else //new instance of thread  save
+                {
+                  SaveLoad.Save(displayThread.sortedthread, filename);
+                }
+            }
+           
+
+
 
             for (int i = 0; i < loadedboard.LThreads.Count; i++)
             {
@@ -55,31 +78,36 @@ namespace Catalog
             }
         }
 
-        public static async Task<_Pbox[]> ParsePosts(_LoadedBoardFabric boardfabric)
+        public static LoomedFabric ParsePosts(_LoadedBoardFabric boardfabric) 
         {
 
             Tree replytree = new Tree();
             _Pbox[] postarray = new _Pbox[0];
             _Pbox[] SortedDisplayList = new _Pbox[0];
+            int OPpostID = 0;
                 string pattern = @"<br><br>";
                 string replacement = " ";
                 Regex breakpoints = new Regex(pattern);
             Dictionary<string, int> threadbank = wordBankCompiler(boardfabric.Board);
-
+            DisplayThread[] finishedThreads = new DisplayThread[0];
+           
 
             for (int i = 0; i < boardfabric.LThreads.Count; i++)
             {
                 string json = boardfabric.LThreads[i].JSON;
                 var posts = JObject.Parse(json)["posts"].ToObject<JArray>();
-                string postCom = posts[i]["com"].ToString();
-                int postID = Int32.Parse(posts[i]["no"].ToString());
-                int postUnix = Int32.Parse(posts[i]["time"].ToString());
-              // string postCom = posts[i]["com"].ToString();
+                OPpostID = Int32.Parse(posts[0]["no"].ToString());
+               
+                for (int d = 0; d < posts.Count;d++) //thread post loop
+                {
+                string postCom = posts[d]["com"].ToString();
+                int postID = Int32.Parse(posts[d]["no"].ToString());
+                int postUnix = Int32.Parse(posts[d]["time"].ToString());
 
-                 string postComBroken = breakpoints.Replace(postCom, replacement);
+                string postComBroken = breakpoints.Replace(postCom, replacement);
                 string pureCOM = "";
 
-                if (posts[i]["no"].ToString() != null && posts[i]["com"] != null)  //html agility pack and encoding fix
+                 if (posts[i]["no"].ToString() != null && posts[i]["com"] != null)  //html agility pack and encoding fix
                 {
                     var htmldoc = new HtmlAgilityPack.HtmlDocument();
                     var html = postComBroken;
@@ -93,28 +121,32 @@ namespace Catalog
                     }
                 }
 
-                var postweight = PostWeight(threadbank, pureCOM);
 
+               //thread components collected
+
+                  var postweight = PostWeight(threadbank, pureCOM);
+                //vars collected
                 replytree = replies(pureCOM, replytree);  //reply tree creation
-
-                _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), 0);
-
-
+                 _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), 0); //idividual post box 
                 postbox.ReplyDepth = replydepth(postbox, replytree);
-                
-                if (postweight > 0)
-                {
-            
-                    postarray.Append(postbox);
+
+                if (postweight < 0) //this might break tree building?
+                    {
+                        postarray.Append<_Pbox>(postbox);
+                    }
+
+
                 }
-
-                //_Pbox[] SortedDisplayList = new _Pbox[0];
-
+            SortedDisplayList = replysort(postarray, replytree);
+            DisplayThread finishedThread = new DisplayThread(OPpostID, boardfabric.Board, SortedDisplayList);
+            finishedThreads.Append(finishedThread);
             }
 
-            SortedDisplayList = replysort(postarray, replytree);
 
-            return SortedDisplayList;
+
+
+            LoomedFabric loomedFabric = new LoomedFabric(boardfabric.Board, finishedThreads);
+            return loomedFabric;
 
         }
 
@@ -523,6 +555,17 @@ namespace Catalog
         }
 
     }
+    public class LoomedFabric
+    {
+        public string board { get; set; }
+        public DisplayThread[] displayThreads {get; set;}
+        public LoomedFabric(string Board, DisplayThread[] DisplayThreads)
+        {
+            board = Board;
+            displayThreads = DisplayThreads;
+        }
+
+    }
     public class Node
     {
         public int id { get; set; }
@@ -617,6 +660,38 @@ namespace Catalog
             ReplyDepth = replydepth;
         }
 
+    }
+    public class DisplayThread
+    {
+        public int id { get; set; }
+        public string board { get; set; }
+        public _Pbox[] sortedthread { get; set; }
+        public DisplayThread(int ID, string Board, _Pbox[] SortedThread)
+        {
+            id = ID;
+            board = Board;
+            sortedthread = SortedThread;
+        }
+    }
+    public class SaveLoad
+    {
+
+        public static void Save(_Pbox[] sorted, string path)
+        {
+            using (var writer = new StreamWriter(path))
+            {
+                writer.Write(JsonConvert.SerializeObject(sorted));
+            }
+
+        }
+        public _Pbox Load( string path)
+        {
+            using (var reader = new StreamReader(path))
+            {
+                return JsonConvert.DeserializeObject<_Pbox>(reader.ReadToEnd());
+            }
+
+        }
     }
 
 }
