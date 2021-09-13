@@ -50,6 +50,8 @@ namespace Catalog
              LoomedFabric SortedBoardArray = ParsePosts(loadedboard);
 
 
+            Console.WriteLine("Press any key to save threads to disc");
+            Console.ReadLine();
             if (SaveDirectory.Equals(string.Empty)) SaveDirectory = $"{Directory.GetCurrentDirectory()}\\{SortedBoardArray.board}";
             else SaveDirectory = $"{SaveDirectory}\\{SortedBoardArray.board}";
             Directory.CreateDirectory(SaveDirectory); //creates location for downloaded images
@@ -65,33 +67,26 @@ namespace Catalog
                   SaveLoad.Save(displayThread.sortedthread, filename);
                 }
             }
-           
 
-
-
-            for (int i = 0; i < loadedboard.LThreads.Count; i++)
-            {
-                Console.WriteLine(@"***************" + loadedboard.LThreads[i].Semantic + " | " + loadedboard.LThreads[i].JSON);
-
-
-
-            }
+            Console.WriteLine(" Threads saved to disc");
+            Console.ReadLine();
         }
 
         public static LoomedFabric ParsePosts(_LoadedBoardFabric boardfabric) 
         {
 
             Tree replytree = new Tree();
-            _Pbox[] postarray = new _Pbox[0];
-            _Pbox[] SortedDisplayList = new _Pbox[0];
+            List<_Pbox> postarray = new List<_Pbox>();
+            List<_Pbox> SortedDisplayList = new List<_Pbox>();
             int OPpostID = 0;
-                string pattern = @"<br><br>";
+            string pureCOM = "";
+                string pattern = @"<br>";
                 string replacement = " ";
                 Regex breakpoints = new Regex(pattern);
             Dictionary<string, int> threadbank = wordBankCompiler(boardfabric.Board);
-            DisplayThread[] finishedThreads = new DisplayThread[0];
-           
+            List<DisplayThread> finishedThreads = new List<DisplayThread>();
 
+            Console.WriteLine("parse checkpoint 1");
             for (int i = 0; i < boardfabric.LThreads.Count; i++)
             {
                 string json = boardfabric.LThreads[i].JSON;
@@ -100,14 +95,18 @@ namespace Catalog
                
                 for (int d = 0; d < posts.Count;d++) //thread post loop
                 {
-                string postCom = posts[d]["com"].ToString();
+                
                 int postID = Int32.Parse(posts[d]["no"].ToString());
                 int postUnix = Int32.Parse(posts[d]["time"].ToString());
+                if (posts[d]["no"].ToString() != null && posts[d]["com"] != null)
+                    {
+                        string postCom = posts[d]["com"].ToString();
 
-                string postComBroken = breakpoints.Replace(postCom, replacement);
-                string pureCOM = "";
+                        string postComBroken = breakpoints.Replace(postCom, replacement);
+                        Console.WriteLine(postCom + "| broken > |" + postComBroken);
+                        pureCOM = "";
 
-                 if (posts[i]["no"].ToString() != null && posts[i]["com"] != null)  //html agility pack and encoding fix
+                   if (posts[i]["no"].ToString() != null && posts[i]["com"] != null)  //html agility pack and encoding fix
                 {
                     var htmldoc = new HtmlAgilityPack.HtmlDocument();
                     var html = postComBroken;
@@ -119,30 +118,44 @@ namespace Catalog
                         pureCOM = WebUtility.HtmlDecode(htmlparsed);
 
                     }
+
+                    }
+                        
+
+
+              
                 }
 
 
                //thread components collected
 
                   var postweight = PostWeight(threadbank, pureCOM);
-                //vars collected
-                replytree = replies(pureCOM, replytree);  //reply tree creation
+                    //vars collected
+                    Console.WriteLine("parse checkpoint 2");
+                    Console.WriteLine(pureCOM + " pureCOM");
+                    replytree = replies(pureCOM, replytree, postID);  //reply tree creation
                  _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), 0); //idividual post box 
                 postbox.ReplyDepth = replydepth(postbox, replytree);
 
-                if (postweight < 0) //this might break tree building?
+                   
+                    postarray.Add(postbox);
+
+                    if (postweight > 0) //this might break tree building?
                     {
-                        postarray.Append<_Pbox>(postbox);
+                   //     postarray.Append<_Pbox>(postbox);
                     }
 
 
                 }
-            SortedDisplayList = replysort(postarray, replytree);
+                Console.WriteLine("parse checkpoint 3");
+                SortedDisplayList = replysort(postarray, replytree);
+
             DisplayThread finishedThread = new DisplayThread(OPpostID, boardfabric.Board, SortedDisplayList);
+
             finishedThreads.Append(finishedThread);
             }
 
-
+            Console.WriteLine("parse checkpoint 4");
 
 
             LoomedFabric loomedFabric = new LoomedFabric(boardfabric.Board, finishedThreads);
@@ -234,9 +247,14 @@ namespace Catalog
             return System.Console.ReadLine();
         }
 
-        public static Tree replies(string postContent, Tree replytree)
+        public static Tree repliesnew(string postContent, Tree replytree, int postID)
         {
+            Console.WriteLine(postContent + " content");
             //IDictionary<int,int> postreplies = new IDictionary<int,int>();
+         //   replytree.addNode(postID);
+
+            //  Regex IDfind = new Regex();
+
             if (postContent.Contains(">>") && postContent.Contains(" "))
             {
                 int Start, End;
@@ -259,7 +277,7 @@ namespace Catalog
 
                     }
                     data = Int32.Parse(postContent.Substring(Start, End - Start));
-
+                    Console.WriteLine(data + " data");
 
 
 
@@ -268,7 +286,7 @@ namespace Catalog
                     {
                         Node newroot = new Node();
                         newroot.id = data;
-                        newroot.addParent(data);
+                       // newroot.a(data);
                         replytree.addRoot(newroot);
                         lastreply = data;
 
@@ -290,19 +308,45 @@ namespace Catalog
 
                //  return replytree;
             }
+       //     replytree.addNode(postID); //end amend
             return replytree;
         }
 
-        public static _Pbox[] replysort(_Pbox[] unsortedposts,Tree replytree)
+        public static Tree replies(string postContent, Tree replytree, int postID)
         {
-            _Pbox[] SortedPosts = new _Pbox[0];
+            string pattern = ">>[0 - 9] +";
+            Regex ReplyFinder = new Regex(pattern);
+            Node postNode = new Node();
+            postNode.id = postID;
+            MatchCollection matches = ReplyFinder.Matches(postContent);
+            if (matches.Count != 0)
+            {
+                for (int i = 0; i < matches.Count; i++)
+                {
+                    replytree.addNode(postNode);
+                    postNode.addParent(Int32.Parse(matches[i].ToString())); //should be reply's postid
+                }
+
+            }
+            else
+            {
+                replytree.addRoot(postNode); //add node to reply tree
+            }
+            return replytree;
+        }
+
+        public static List<_Pbox> replysort(List<_Pbox> unsortedposts,Tree replytree)
+        {
+            List<_Pbox> SortedPosts = new List<_Pbox>();
+
             foreach (_Pbox upost in unsortedposts)
             {
 
 
                 if(upost.ReplyDepth == 0) //if post is original
                 {
-                    SortedPosts.Append<_Pbox>(upost);
+                   
+                    SortedPosts.Add(upost);
                     //loop through all children and amend them to sorted posts
                    SortedPosts = childloop(upost.PostID, replytree, SortedPosts, unsortedposts);
                 }
@@ -318,26 +362,50 @@ namespace Catalog
         public static int replydepth(_Pbox post, Tree replytree)
         {
             var depth = 0;
+            var depthmax = 0;
+            if (replytree.getNode(post.PostID) != null)
+            {
            Node node = replytree.getNode(post.PostID);
             if(node.getparents() != null) //node has parents and not tree root
             {
-            List<Node> parents = node.getparents();
+                    if (node.getparents().Count != 0)
+                    {
 
-                depth = parents[0].replydepth + 1;
-                return depth;
+
+                        List<Node> parents = node.getparents();
+                        foreach (Node node1 in parents)
+                        {
+
+                            depth = node1.replydepth;
+
+                            if (depth > depthmax)
+                            {
+                                depthmax = depth;
+                            }
+
+                        }
+                        depthmax = depthmax + 1;
+                        return depthmax;
+                    }
             }
+            }
+
             return 0;  
 
 
         }
-        public static _Pbox[] childloop(int post, Tree replytree, _Pbox[] SortedPosts, _Pbox[] UnsortedPosts)
+        public static List<_Pbox> childloop(int post, Tree replytree, List<_Pbox> SortedPosts, List<_Pbox> UnsortedPosts)
         {
-            if (replytree.getNode(post).getchildren() != null )//if there is children
-            {
-                foreach (Node n in replytree.getNode(post).getchildren()) //for each child
+
+            if (replytree.getNode(post) != null)
+            { 
+                if (replytree.getNode(post).getchildren() != null)//if there is children
                 {
-                   SortedPosts.Append<_Pbox>(UnsortedPosts[n.id]); //add this child to sorted list
-                   SortedPosts = childloop(n.id, replytree, SortedPosts, UnsortedPosts); //check this child for children
+                    foreach (Node n in replytree.getNode(post).getchildren()) //for each child
+                    {
+                        SortedPosts.Append<_Pbox>(UnsortedPosts[n.id]); //add this child to sorted list
+                        SortedPosts = childloop(n.id, replytree, SortedPosts, UnsortedPosts); //check this child for children
+                    }
                 }
             }
             return SortedPosts;
@@ -395,7 +463,7 @@ namespace Catalog
 
             List<LoadedThread> LThreadArray = new List<LoadedThread>();
 
-            for(int i = 0; i < 5; i++)
+            for(int i = 0; i < 2; i++)
             {
                 await Task.Delay(15000);
                 var urlendpoint = _Tlist.ThreadArray[i].ThreadUrl;
@@ -558,8 +626,8 @@ namespace Catalog
     public class LoomedFabric
     {
         public string board { get; set; }
-        public DisplayThread[] displayThreads {get; set;}
-        public LoomedFabric(string Board, DisplayThread[] DisplayThreads)
+        public List<DisplayThread> displayThreads {get; set;}
+        public LoomedFabric(string Board, List<DisplayThread> DisplayThreads)
         {
             board = Board;
             displayThreads = DisplayThreads;
@@ -589,9 +657,11 @@ namespace Catalog
 
         public void addParent(int id) // gets parent node from parent id, then adds this node as parents child
         {
-            Node parent = this.tree.getNode(id);
-            this.parent[id] = parent;
+
+            Node parentnode = this.tree.getNode(id);
+            this.parent.Add(parentnode);
             this.parent[id].children.Add(this);
+
         }
         public List<Node> getparents() //grabs node from nodeid dictionary
         {
@@ -631,7 +701,11 @@ namespace Catalog
 
         public Node getNode(int id) //grabs node from nodeid dictionary
         {
-            return node_dict[id];
+            if(node_dict.ContainsKey(id))
+            {
+                return node_dict[id];
+            }
+            return null;
         }
 
         public void addRoot(Node node) // adds node to root list, and adds node to node dictionary
@@ -665,8 +739,8 @@ namespace Catalog
     {
         public int id { get; set; }
         public string board { get; set; }
-        public _Pbox[] sortedthread { get; set; }
-        public DisplayThread(int ID, string Board, _Pbox[] SortedThread)
+        public List<_Pbox> sortedthread { get; set; }
+        public DisplayThread(int ID, string Board, List<_Pbox> SortedThread)
         {
             id = ID;
             board = Board;
@@ -676,7 +750,7 @@ namespace Catalog
     public class SaveLoad
     {
 
-        public static void Save(_Pbox[] sorted, string path)
+        public static void Save(List<_Pbox> sorted, string path)
         {
             using (var writer = new StreamWriter(path))
             {
@@ -684,11 +758,11 @@ namespace Catalog
             }
 
         }
-        public _Pbox Load( string path)
+        public _Pbox[] Load( string path)
         {
             using (var reader = new StreamReader(path))
             {
-                return JsonConvert.DeserializeObject<_Pbox>(reader.ReadToEnd());
+                return JsonConvert.DeserializeObject<_Pbox[]>(reader.ReadToEnd());
             }
 
         }
