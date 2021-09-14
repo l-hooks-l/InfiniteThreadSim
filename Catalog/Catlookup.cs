@@ -50,7 +50,7 @@ namespace Catalog
              LoomedFabric SortedBoardArray = ParsePosts(loadedboard);
 
 
-            Console.WriteLine("Press any key to save threads to disc");
+            Console.WriteLine("Press any key to save threads to disc  " + SortedBoardArray.displayThreads.Count);
             Console.ReadLine();
             if (SaveDirectory.Equals(string.Empty)) SaveDirectory = $"{Directory.GetCurrentDirectory()}\\{SortedBoardArray.board}";
             else SaveDirectory = $"{SaveDirectory}\\{SortedBoardArray.board}";
@@ -58,13 +58,15 @@ namespace Catalog
             foreach (DisplayThread displayThread in SortedBoardArray.displayThreads)
             {
                 string filename = displayThread.id.ToString();
+                string path = $"{ SaveDirectory }\\{filename}-unsorted";
+                Console.WriteLine(filename);
                 if(Directory.GetFiles(SaveDirectory).Contains(filename)) //if thread instance is already saved to disk  overwrite
                 {
-                    SaveLoad.Save(displayThread.sortedthread, filename);
+                    SaveLoad.Save(displayThread.sortedthread, path);
                 }
                 else //new instance of thread  save
                 {
-                  SaveLoad.Save(displayThread.sortedthread, filename);
+                  SaveLoad.Save(displayThread.sortedthread, path);
                 }
             }
 
@@ -148,11 +150,13 @@ namespace Catalog
 
                 }
                 Console.WriteLine("parse checkpoint 3");
-                SortedDisplayList = replysort(postarray, replytree);
 
+                //   SortedDisplayList = replysort(postarray, replytree);
+                SortedDisplayList = postarray;
             DisplayThread finishedThread = new DisplayThread(OPpostID, boardfabric.Board, SortedDisplayList);
 
-            finishedThreads.Append(finishedThread);
+           
+                finishedThreads.Add(finishedThread);
             }
 
             Console.WriteLine("parse checkpoint 4");
@@ -314,17 +318,19 @@ namespace Catalog
 
         public static Tree replies(string postContent, Tree replytree, int postID)
         {
-            string pattern = ">>[0 - 9] +";
-            Regex ReplyFinder = new Regex(pattern);
+            string pattern = "(?<=>>)(((?<!>>>)[0-9]))+";
+            Regex ReplyFinder = new Regex(pattern,  RegexOptions.IgnoreCase);
             Node postNode = new Node();
             postNode.id = postID;
             MatchCollection matches = ReplyFinder.Matches(postContent);
             if (matches.Count != 0)
             {
+               replytree.addNode(postNode);
                 for (int i = 0; i < matches.Count; i++)
                 {
-                    replytree.addNode(postNode);
-                    postNode.addParent(Int32.Parse(matches[i].ToString())); //should be reply's postid
+                    
+                    //postNode.addParent(Int32.Parse(matches[i].ToString())); //should be reply's postid
+                    postNode.addParent(Int32.Parse(matches[i].Value));
                 }
 
             }
@@ -403,7 +409,13 @@ namespace Catalog
                 {
                     foreach (Node n in replytree.getNode(post).getchildren()) //for each child
                     {
-                        SortedPosts.Append<_Pbox>(UnsortedPosts[n.id]); //add this child to sorted list
+                        
+                        _Pbox pluckedpost = UnsortedPosts.Find(x => x.PostID == n.id);
+                        UnsortedPosts.Remove(pluckedpost);
+
+                        SortedPosts.Add(pluckedpost);  //add child to sorted list, check this child for children
+                        //SortedPosts.Append<_Pbox>(UnsortedPosts[n.id]);
+                        //add this child to sorted list
                         SortedPosts = childloop(n.id, replytree, SortedPosts, UnsortedPosts); //check this child for children
                     }
                 }
@@ -481,7 +493,7 @@ namespace Catalog
 
         }
 
-
+       
         public static Dictionary<string, int> wordBankCompiler(string boardId)
         {
             Dictionary<string, int> TD = new Dictionary<string, int>();
@@ -657,10 +669,16 @@ namespace Catalog
 
         public void addParent(int id) // gets parent node from parent id, then adds this node as parents child
         {
-
-            Node parentnode = this.tree.getNode(id);
+            //int is id of the replyed to post, ie this nodes parent
+            if(this.tree.getNode(id) != null)
+            {
+           Node parentnode = this.tree.getNode(id);
+            parentnode.id = id;
             this.parent.Add(parentnode);
-            this.parent[id].children.Add(this);
+            int index = this.parent.IndexOf(parentnode);
+            this.parent[index].children.Add(this);
+            }
+ 
 
         }
         public List<Node> getparents() //grabs node from nodeid dictionary
