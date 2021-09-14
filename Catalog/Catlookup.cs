@@ -95,6 +95,7 @@ namespace Catalog
                 List<_Pbox> postarray = new List<_Pbox>();
                 List<_Pbox> SortedDisplayList = new List<_Pbox>();
                 string json = boardfabric.LThreads[i].JSON;
+                string postCom = "";
                 var posts = JObject.Parse(json)["posts"].ToObject<JArray>();
                 OPpostID = Int32.Parse(posts[0]["no"].ToString());
 
@@ -105,7 +106,7 @@ namespace Catalog
                     int postUnix = Int32.Parse(posts[d]["time"].ToString());
                     if (posts[d]["no"].ToString() != null && posts[d]["com"] != null)
                     {
-                        string postCom = posts[d]["com"].ToString();
+                        postCom = posts[d]["com"].ToString();
 
                         string postComBroken = breakpoints.Replace(postCom, replacement);
                         Console.WriteLine(postCom + "| broken > |" + postComBroken);
@@ -139,7 +140,8 @@ namespace Catalog
                     Console.WriteLine("parse checkpoint 2");
                     Console.WriteLine(pureCOM + " pureCOM");
                     replytree = replies(pureCOM, replytree, postID);  //reply tree creation
-                    _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), 0); //idividual post box 
+                    
+                    _Pbox postbox = new _Pbox(postCom, postID, postUnix, new PointF(0, 0), 0); //idividual post box 
                     postbox.ReplyDepth = replydepth(postbox, replytree);
 
 
@@ -741,7 +743,7 @@ namespace Catalog
     [Serializable()]
      public class _Pbox
     {
-        public string Commentdata { get; private set; }
+        public string Data { get; private set; }
         public int PostID { get; private set; }
         public int Unix { get; private set; }
         public int ReplyDepth { get; set; }
@@ -749,7 +751,7 @@ namespace Catalog
 
         public _Pbox(string Com, int postid, int unix, PointF draworigin, int replydepth)
         {
-            Commentdata = Com;
+            Data = Com;
             PostID = postid;
             Unix = unix;
             Dorigin = draworigin;
@@ -772,18 +774,25 @@ namespace Catalog
     public class SaveLoad
     {
 
+
         public static void Save(List<_Pbox> sorted, string path)
         {
-            Stream stream = File.Open(path, FileMode.Create);
-            BinaryFormatter formatter = new BinaryFormatter();
-            formatter.Serialize(stream, sorted);
-            stream.Close();
+
+            using (var writer = new StreamWriter(path))
+            {
+                var temp = JsonConvert.SerializeObject(sorted);
+
+
+                writer.Write(JsonConvert.SerializeObject(sorted));
+            }
+
         }
-        public List<_Pbox> Load( string path)
+        public List<_Pbox> Load( string path, List<_Pbox> sorted)
         {
+            System.Xml.Serialization.XmlSerializer x = new System.Xml.Serialization.XmlSerializer(sorted.GetType());
             Stream stream = File.Open(path, FileMode.Open);
-            BinaryFormatter formatter = new BinaryFormatter();
-           List<_Pbox> loadedfile = (List<_Pbox>)formatter.Deserialize(stream);
+            List<_Pbox> loadedfile = (List<_Pbox>)x.Deserialize(stream);
+
             stream.Close();
             return loadedfile;
         }

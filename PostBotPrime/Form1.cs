@@ -36,7 +36,8 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
     , 100000, 123456789, new PointF(0, 0), 2);
 
         public string LoadDirectory = @"C:\Users\Nathan\Documents\ChanJson\x\";
-
+        public string ImageDirectory = @"";
+        public string MusicDirectory = @"";
 
 
         //class declares
@@ -90,10 +91,10 @@ Color.FromArgb(255, 152, 152, 255));
             
 
             var files = Directory.GetFiles(LoadDirectory);
-
+            
             if (files.Length != 0)
             {
-                loadedthread = Loadfile(files[f]);
+                loadedthread = Loadfile(files[f], loadedthread);
             }
             else
             {
@@ -138,7 +139,7 @@ Color.FromArgb(255, 152, 152, 255));
         [Serializable()] public class _Pbox
         {
 
-            public string Commentdata { get; private set; }
+            public string Data { get; private set; }
             public int PostID { get; private set; }
             public int Unix { get; private set; }
             public int ReplyDepth { get; set; }
@@ -148,7 +149,7 @@ Color.FromArgb(255, 152, 152, 255));
           public _Pbox(string Com, int postid, int unix, PointF draworigin, int replydepth)
             {
 
-                Commentdata = Com;
+                Data = Com;
                 PostID = postid;
                 Unix = unix;
                 Dorigin = draworigin;
@@ -277,7 +278,7 @@ Color.FromArgb(255, 152, 152, 255));
 
            
           
-            Size size = TextRenderer.MeasureText(g, POST.Commentdata, panel1.Font, TextSizeInt, flags);
+            Size size = TextRenderer.MeasureText(g, POST.Data, panel1.Font, TextSizeInt, flags);
            
 
             TextSize.Height = TextSize.Height + size.Height;
@@ -300,12 +301,14 @@ Color.FromArgb(255, 152, 152, 255));
             g.DrawRectangle(mypen, PostOrigin.X, PostOrigin.Y, PostSize.Width, PostSize.Height);
 
             g.DrawRectangle(mypen, ImageOrigin.X, ImageOrigin.Y, ImageSize.Width, ImageSize.Height);
+
+
             //g.DrawRectangle(mypen, TextOrigin.X, TextOrigin.Y, TextSize.Width, TextSize.Height);
             g.DrawRectangle(mypen, HeaderOrigin.X, HeaderOrigin.Y, HeaderSize.Width, HeaderSize.Height);
 
 
             // g.DrawRectangle(mypen, PostOrigin.X, PostOrigin.Y, PostSize.Width, PostSize.Height);
-            TextRenderer.DrawText(g, POST.Commentdata, stylefont, textbounds, mypen2.Color, Color.Transparent, flags);
+            TextRenderer.DrawText(g, POST.Data, stylefont, textbounds, mypen2.Color, Color.Transparent, flags);
             TextRenderer.DrawText(g, header, stylefont, headerbounds, mypen2.Color, Color.Transparent, flags);
 
             //next posts origin set
@@ -328,15 +331,29 @@ Color.FromArgb(255, 152, 152, 255));
             }
 
         }
-        public List<_Pbox> Loadfile(string path)
+        public List<_Pbox> Loadfile(string path, List<_Pbox> sorted)
         {
-            Stream stream = File.Open(path, FileMode.Open);
-            BinaryFormatter formatter = new BinaryFormatter();
-            List<_Pbox> loadedfile = (List<_Pbox>)formatter.Deserialize(stream);
 
-            stream.Close();
-            return loadedfile;
+
+            using (var reader = new StreamReader(path))
+            {
+
+                
+                var temp2 = JsonConvert.DeserializeObject<IEnumerable<_Pbox>>(reader.ReadToEnd()).ToList();
+
+                return temp2;
+
+
+
+
+            }
+
         }
+
+                
+           
+
+        
 
             public void ReadNextPost(object sender, EventArgs e)
         {
@@ -345,17 +362,22 @@ Color.FromArgb(255, 152, 152, 255));
             if (p < loaderposts.Count-1)
             {
                 panel1.Invalidate();
-             
-                 Voice1.SpeakAsync(loaderposts[p].Commentdata);
+             if(loaderposts[p].Data != null)
+                {
+                 Voice1.SpeakAsync(loaderposts[p].Data);
+                }
+
                     Scrolling = true;
                  p++;
        
             }
             else if (p < loaderposts.Count)
             {
-                
 
-                 Voice1.SpeakAsync(loaderposts[p].Commentdata);
+                if (loaderposts[p].Data != null)
+                {
+                    Voice1.SpeakAsync(loaderposts[p].Data);
+                }
                 Scrolling = true;
                 p++;
             }
