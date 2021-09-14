@@ -16,6 +16,7 @@ using System.Speech.Synthesis;
 using System.Drawing.Drawing2D;
 using System.IO;
 using Newtonsoft.Json;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace PostBotPrime
 {
@@ -34,7 +35,7 @@ Any decent program includes hinge and calf wor enough lower body focus. "
 Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody focus. "
     , 100000, 123456789, new PointF(0, 0), 2);
 
-        public string LoadDirectory = @"C:\Users\Nathan\Documents\ChanJson";
+        public string LoadDirectory = @"C:\Users\Nathan\Documents\ChanJson\x\";
 
 
 
@@ -51,7 +52,7 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
         PointF Origin = new PointF(0, 0);
         PointF RollingOrigin = new PointF(0, 0);
         List<PointF> scrollpoints = new List<PointF>();
-        _Pbox[] loadedthread;
+        public List<_Pbox> loadedthread;
 
         SpeechSynthesizer Voice1 = new SpeechSynthesizer();
         
@@ -89,13 +90,14 @@ Color.FromArgb(255, 152, 152, 255));
             
 
             var files = Directory.GetFiles(LoadDirectory);
+
             if (files.Length != 0)
             {
                 loadedthread = Loadfile(files[f]);
             }
             else
             {
-                loadedthread = new _Pbox[] { testbox, testbox2,testbox3,testbox4,testbox5 };
+                loadedthread = new List<_Pbox> { testbox, testbox2,testbox3,testbox4,testbox5 };
             }
             InitializeComponent();
 
@@ -132,30 +134,34 @@ Color.FromArgb(255, 152, 152, 255));
 
         }
 
-        public class _Pbox
+        
+        [Serializable()] public class _Pbox
         {
-            public string Comment { get; private set; }
+
+            public string Commentdata { get; private set; }
             public int PostID { get; private set; }
             public int Unix { get; private set; }
             public int ReplyDepth { get; set; }
             public PointF Dorigin { get; set; }
 
-            public _Pbox(string Com, int postid, int unix, PointF draworigin, int replydepth)
+            
+          public _Pbox(string Com, int postid, int unix, PointF draworigin, int replydepth)
             {
-                Comment = Com;
+
+                Commentdata = Com;
                 PostID = postid;
                 Unix = unix;
                 Dorigin = draworigin;
                 ReplyDepth = replydepth;
             }
-
+ 
         }
 
         private void panel1_Paint(object sender, PaintEventArgs e)
         {
             // e.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
             //test array
-            _Pbox[] loaderposts = loadedthread;
+            //List<_Pbox> loaderposts = loadedthread;
 
             Graphics g = e.Graphics;
             Point origin = new Point(0, 0);
@@ -177,7 +183,7 @@ Color.FromArgb(255, 152, 152, 255));
 
 
             //drawing posts area
-            for (int i = 0; i < loaderposts.Length; i++) 
+            for (int i = 0; i < loadedthread.Count; i++) 
             {
                 //origin set
               DrawOrigin = new PointF(0, testbox.Dorigin.Y + RollingOrigin.Y);  
@@ -186,7 +192,7 @@ Color.FromArgb(255, 152, 152, 255));
                
                 
                 //current box to draw
-                DrawPost(loaderposts[i], e);
+                DrawPost(loadedthread[i], e);
             }
             loaded = true;
         }
@@ -271,7 +277,7 @@ Color.FromArgb(255, 152, 152, 255));
 
            
           
-            Size size = TextRenderer.MeasureText(g, POST.Comment, panel1.Font, TextSizeInt, flags);
+            Size size = TextRenderer.MeasureText(g, POST.Commentdata, panel1.Font, TextSizeInt, flags);
            
 
             TextSize.Height = TextSize.Height + size.Height;
@@ -299,7 +305,7 @@ Color.FromArgb(255, 152, 152, 255));
 
 
             // g.DrawRectangle(mypen, PostOrigin.X, PostOrigin.Y, PostSize.Width, PostSize.Height);
-            TextRenderer.DrawText(g, POST.Comment, stylefont, textbounds, mypen2.Color, Color.Transparent, flags);
+            TextRenderer.DrawText(g, POST.Commentdata, stylefont, textbounds, mypen2.Color, Color.Transparent, flags);
             TextRenderer.DrawText(g, header, stylefont, headerbounds, mypen2.Color, Color.Transparent, flags);
 
             //next posts origin set
@@ -322,33 +328,34 @@ Color.FromArgb(255, 152, 152, 255));
             }
 
         }
-        public _Pbox[] Loadfile(string path)
+        public List<_Pbox> Loadfile(string path)
         {
-            using (var reader = new StreamReader(path))
-            {
-                return JsonConvert.DeserializeObject<_Pbox[]>(reader.ReadToEnd());
-            }
+            Stream stream = File.Open(path, FileMode.Open);
+            BinaryFormatter formatter = new BinaryFormatter();
+            List<_Pbox> loadedfile = (List<_Pbox>)formatter.Deserialize(stream);
 
+            stream.Close();
+            return loadedfile;
         }
 
-        public void ReadNextPost(object sender, EventArgs e)
+            public void ReadNextPost(object sender, EventArgs e)
         {
-            _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4 , testbox5};
+            List<_Pbox> loaderposts = loadedthread;
             
-            if (p < loaderposts.Length-1)
+            if (p < loaderposts.Count-1)
             {
                 panel1.Invalidate();
              
-                 Voice1.SpeakAsync(loaderposts[p].Comment);
+                 Voice1.SpeakAsync(loaderposts[p].Commentdata);
                     Scrolling = true;
                  p++;
        
             }
-            else if (p < loaderposts.Length)
+            else if (p < loaderposts.Count)
             {
                 
 
-                 Voice1.SpeakAsync(loaderposts[p].Comment);
+                 Voice1.SpeakAsync(loaderposts[p].Commentdata);
                 Scrolling = true;
                 p++;
             }

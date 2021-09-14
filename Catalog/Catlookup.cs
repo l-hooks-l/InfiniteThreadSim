@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Catalog
 {
@@ -78,8 +79,8 @@ namespace Catalog
         {
 
             Tree replytree = new Tree();
-            List<_Pbox> postarray = new List<_Pbox>();
-            List<_Pbox> SortedDisplayList = new List<_Pbox>();
+            
+            
             int OPpostID = 0;
             string pureCOM = "";
                 string pattern = @"<br>";
@@ -91,16 +92,18 @@ namespace Catalog
             Console.WriteLine("parse checkpoint 1");
             for (int i = 0; i < boardfabric.LThreads.Count; i++)
             {
+                List<_Pbox> postarray = new List<_Pbox>();
+                List<_Pbox> SortedDisplayList = new List<_Pbox>();
                 string json = boardfabric.LThreads[i].JSON;
                 var posts = JObject.Parse(json)["posts"].ToObject<JArray>();
                 OPpostID = Int32.Parse(posts[0]["no"].ToString());
-               
-                for (int d = 0; d < posts.Count;d++) //thread post loop
+
+                for (int d = 0; d < posts.Count; d++) //thread post loop
                 {
-                
-                int postID = Int32.Parse(posts[d]["no"].ToString());
-                int postUnix = Int32.Parse(posts[d]["time"].ToString());
-                if (posts[d]["no"].ToString() != null && posts[d]["com"] != null)
+
+                    int postID = Int32.Parse(posts[d]["no"].ToString());
+                    int postUnix = Int32.Parse(posts[d]["time"].ToString());
+                    if (posts[d]["no"].ToString() != null && posts[d]["com"] != null)
                     {
                         string postCom = posts[d]["com"].ToString();
 
@@ -108,55 +111,55 @@ namespace Catalog
                         Console.WriteLine(postCom + "| broken > |" + postComBroken);
                         pureCOM = "";
 
-                   if (posts[i]["no"].ToString() != null && posts[i]["com"] != null)  //html agility pack and encoding fix
-                {
-                    var htmldoc = new HtmlAgilityPack.HtmlDocument();
-                    var html = postComBroken;
-                    if (html != null)
-                    {
+                        if (posts[i]["no"].ToString() != null && posts[i]["com"] != null)  //html agility pack and encoding fix
+                        {
+                            var htmldoc = new HtmlAgilityPack.HtmlDocument();
+                            var html = postComBroken;
+                            if (html != null)
+                            {
 
-                        htmldoc.LoadHtml(html);
-                        var htmlparsed = htmldoc.DocumentNode.InnerText;
-                        pureCOM = WebUtility.HtmlDecode(htmlparsed);
+                                htmldoc.LoadHtml(html);
+                                var htmlparsed = htmldoc.DocumentNode.InnerText;
+                                pureCOM = WebUtility.HtmlDecode(htmlparsed);
+
+                            }
+
+                        }
+
+
+
 
                     }
 
-                    }
-                        
 
+                    //post components collected
 
-              
-                }
-
-
-               //thread components collected
-
-                  var postweight = PostWeight(threadbank, pureCOM);
+                    var postweight = PostWeight(threadbank, pureCOM);
                     //vars collected
                     Console.WriteLine("parse checkpoint 2");
                     Console.WriteLine(pureCOM + " pureCOM");
                     replytree = replies(pureCOM, replytree, postID);  //reply tree creation
-                 _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), 0); //idividual post box 
-                postbox.ReplyDepth = replydepth(postbox, replytree);
+                    _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), 0); //idividual post box 
+                    postbox.ReplyDepth = replydepth(postbox, replytree);
 
-                   
+
                     postarray.Add(postbox);
 
                     if (postweight > 0) //this might break tree building?
                     {
-                   //     postarray.Append<_Pbox>(postbox);
+                        //     postarray.Append<_Pbox>(postbox);
                     }
 
 
                 }
                 Console.WriteLine("parse checkpoint 3");
 
-                //   SortedDisplayList = replysort(postarray, replytree);
+                 //  SortedDisplayList = replysort(postarray, replytree);
                 SortedDisplayList = postarray;
             DisplayThread finishedThread = new DisplayThread(OPpostID, boardfabric.Board, SortedDisplayList);
 
+             finishedThreads.Add(finishedThread);      
            
-                finishedThreads.Add(finishedThread);
             }
 
             Console.WriteLine("parse checkpoint 4");
@@ -735,9 +738,10 @@ namespace Catalog
 
     }
 
-    public class _Pbox
+    [Serializable()]
+     public class _Pbox
     {
-        public string Comment { get; private set; }
+        public string Commentdata { get; private set; }
         public int PostID { get; private set; }
         public int Unix { get; private set; }
         public int ReplyDepth { get; set; }
@@ -745,7 +749,7 @@ namespace Catalog
 
         public _Pbox(string Com, int postid, int unix, PointF draworigin, int replydepth)
         {
-            Comment = Com;
+            Commentdata = Com;
             PostID = postid;
             Unix = unix;
             Dorigin = draworigin;
@@ -770,19 +774,18 @@ namespace Catalog
 
         public static void Save(List<_Pbox> sorted, string path)
         {
-            using (var writer = new StreamWriter(path))
-            {
-                writer.Write(JsonConvert.SerializeObject(sorted));
-            }
-
+            Stream stream = File.Open(path, FileMode.Create);
+            BinaryFormatter formatter = new BinaryFormatter();
+            formatter.Serialize(stream, sorted);
+            stream.Close();
         }
-        public _Pbox[] Load( string path)
+        public List<_Pbox> Load( string path)
         {
-            using (var reader = new StreamReader(path))
-            {
-                return JsonConvert.DeserializeObject<_Pbox[]>(reader.ReadToEnd());
-            }
-
+            Stream stream = File.Open(path, FileMode.Open);
+            BinaryFormatter formatter = new BinaryFormatter();
+           List<_Pbox> loadedfile = (List<_Pbox>)formatter.Deserialize(stream);
+            stream.Close();
+            return loadedfile;
         }
     }
 

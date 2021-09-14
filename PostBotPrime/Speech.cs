@@ -17,7 +17,7 @@ namespace PostBotPrime
 
             for (int i = 0; i < posts.Length; i++)
             {
-                Voice1.Speak(posts[i].Comment);
+                Voice1.Speak(posts[i].Commentdata);
             }
             return true;
         }
