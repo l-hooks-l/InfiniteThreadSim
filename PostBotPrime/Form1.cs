@@ -365,6 +365,7 @@ Color.FromArgb(255, 152, 152, 255));
 
             public void ReadNextPost(object sender, EventArgs e)
         {
+            
             List<_Pbox> loaderposts = loadedthread;
             
             if (p < loaderposts.Count-1)
@@ -390,7 +391,8 @@ Color.FromArgb(255, 152, 152, 255));
                 p++;
             }
 
-                Voice1.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);        
+           //     Voice1.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);       
+            
         }
 
        private void Form1_Load(object sender, EventArgs e)
