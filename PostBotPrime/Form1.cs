@@ -46,7 +46,7 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
         int MsTicks = 50;
         float ticks = 0.0f;
         float tickdelta = 1000 / 60;
-        float frameincrease = 2f;
+        float frameincrease = 1f;
         float frames = 0;
         float stopbuffer = 400;
         int buffer = 5;

@@ -143,14 +143,18 @@ namespace Catalog
                     replytree = replies(pureCOM, replytree, postID);  //reply tree creation
                     
                     _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), 0); //idividual post box 
-                    postbox.ReplyDepth = replydepth(postbox, replytree);
+                   var depth = replydepth(postbox, replytree);
+                    replytree.getNode(postID).replydepth = depth;
+                    postbox.ReplyDepth = depth;
 
 
-                    postarray.Add(postbox);
+
+                   // postarray.Add(postbox);
 
                     if (postweight > 0) //this might break tree building?
                     {
                         //     postarray.Append<_Pbox>(postbox);
+                        postarray.Add(postbox);
                     }
 
 
