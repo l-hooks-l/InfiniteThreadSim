@@ -335,18 +335,26 @@ Color.FromArgb(255, 152, 152, 255));
         {
 
 
-            using (var reader = new StreamReader(path))
-            {
-
-                
+       /*     using (var reader = new StreamReader(path))
+            {        
                 var temp2 = JsonConvert.DeserializeObject<IEnumerable<_Pbox>>(reader.ReadToEnd()).ToList();
 
                 return temp2;
+            } */
 
 
+          /*  System.Xml.Serialization.XmlSerializer x = new System.Xml.Serialization.XmlSerializer(sorted.GetType());
+            Stream stream = File.Open(path, FileMode.Open);
+            List<_Pbox> loadedfile = (List<_Pbox>)x.Deserialize(stream);
 
+            stream.Close();
+            return loadedfile; */
 
-            }
+            Stream stream = File.Open(path, FileMode.Open);              //binary load
+            BinaryFormatter formatter = new BinaryFormatter();
+            List<_Pbox> loadedfile = (List<_Pbox>)formatter.Deserialize(stream);
+            stream.Close();
+            return loadedfile;
 
         }
 

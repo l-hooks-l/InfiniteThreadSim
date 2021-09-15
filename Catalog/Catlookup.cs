@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.Runtime.Serialization.Formatters.Binary;
+using static PostBotPrime.Form1;
 
 namespace Catalog
 {
@@ -740,8 +741,8 @@ namespace Catalog
 
     }
 
-    [Serializable()]
-     public class _Pbox
+ //   [Serializable()]
+  /*   public class _Pbox
     {
         public string Data { get; private set; }
         public int PostID { get; private set; }
@@ -758,7 +759,7 @@ namespace Catalog
             ReplyDepth = replydepth;
         }
 
-    }
+    } */
     public class DisplayThread
     {
         public int id { get; set; }
@@ -778,23 +779,52 @@ namespace Catalog
         public static void Save(List<_Pbox> sorted, string path)
         {
 
-            using (var writer = new StreamWriter(path))
-            {
-                var temp = JsonConvert.SerializeObject(sorted);
+            /*     using (var writer = new StreamWriter(path)) //json save
+                 {
+                     var temp = JsonConvert.SerializeObject(sorted);
 
 
-                writer.Write(JsonConvert.SerializeObject(sorted));
-            }
+                     writer.Write(JsonConvert.SerializeObject(sorted));
+                 }*/
+
+
+            Stream stream = File.Open(path, FileMode.Create); //binary save
+            BinaryFormatter formatter = new BinaryFormatter();
+            formatter.Serialize(stream, sorted);
+            stream.Close(); 
+
 
         }
         public List<_Pbox> Load( string path, List<_Pbox> sorted)
         {
-            System.Xml.Serialization.XmlSerializer x = new System.Xml.Serialization.XmlSerializer(sorted.GetType());
+           /* System.Xml.Serialization.XmlSerializer x = new System.Xml.Serialization.XmlSerializer(sorted.GetType());
             Stream stream = File.Open(path, FileMode.Open);
-            List<_Pbox> loadedfile = (List<_Pbox>)x.Deserialize(stream);
+            List<_Pbox> loadedfile = (List<_Pbox>)x.Deserialize(stream);           //xml load
 
             stream.Close();
-            return loadedfile;
+            return loadedfile; 
+           */
+
+              Stream stream = File.Open(path, FileMode.Open);              //binary load
+              BinaryFormatter formatter = new BinaryFormatter();
+              List<_Pbox> loadedfile = (List<_Pbox>)formatter.Deserialize(stream);
+              stream.Close();
+              return loadedfile; 
+
+            /*     using (var reader = new StreamReader(path))
+           {
+                                                                                 //json load
+
+               var temp2 = JsonConvert.DeserializeObject<IEnumerable<_Pbox>>(reader.ReadToEnd()).ToList();
+
+               return temp2;
+
+
+
+
+           } */
+
+
         }
     }
 

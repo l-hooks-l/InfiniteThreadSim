@@ -58,6 +58,11 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\PostBotPrime\PostBotPrime.csproj">
+      <Project>{313f0c74-3d36-453c-b928-52bcee3a2985}</Project>
+      <Name>PostBotPrime</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
