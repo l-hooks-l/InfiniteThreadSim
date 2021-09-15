@@ -161,8 +161,8 @@ namespace Catalog
                 }
                 Console.WriteLine("parse checkpoint 3");
 
-                 //  SortedDisplayList = replysort(postarray, replytree);
-                SortedDisplayList = postarray;
+                   SortedDisplayList = replysort(postarray, replytree);
+               // SortedDisplayList = postarray;
             DisplayThread finishedThread = new DisplayThread(OPpostID, boardfabric.Board, SortedDisplayList);
 
              finishedThreads.Add(finishedThread);      
@@ -421,9 +421,12 @@ namespace Catalog
                     {
                         
                         _Pbox pluckedpost = UnsortedPosts.Find(x => x.PostID == n.id);
-                        UnsortedPosts.Remove(pluckedpost);
-
-                        SortedPosts.Add(pluckedpost);  //add child to sorted list, check this child for children
+                        //UnsortedPosts.Remove(pluckedpost);
+                        if (pluckedpost != null)
+                        {
+                            SortedPosts.Add(pluckedpost);  //add child to sorted list, check this child for children
+                        }
+                        
                         //SortedPosts.Append<_Pbox>(UnsortedPosts[n.id]);
                         //add this child to sorted list
                         SortedPosts = childloop(n.id, replytree, SortedPosts, UnsortedPosts); //check this child for children
