@@ -142,7 +142,7 @@ namespace Catalog
                     Console.WriteLine(pureCOM + " pureCOM");
                     replytree = replies(pureCOM, replytree, postID);  //reply tree creation
                     
-                    _Pbox postbox = new _Pbox(postCom, postID, postUnix, new PointF(0, 0), 0); //idividual post box 
+                    _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), 0); //idividual post box 
                     postbox.ReplyDepth = replydepth(postbox, replytree);
 
 
