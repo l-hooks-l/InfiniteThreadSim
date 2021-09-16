@@ -164,7 +164,15 @@ Color.FromArgb(255, 152, 152, 255));
             //test array
             //List<_Pbox> loaderposts = loadedthread;
 
-            Graphics g = e.Graphics;
+                Graphics g = e.Graphics;
+            if (loaded != true)
+            {
+                Rectangle rect = new Rectangle(0,0,panel1.Width,panel1.Height);
+                Region bounds = new Region(rect);
+                g.Clip = bounds;
+            }
+            
+            
             Point origin = new Point(0, 0);
             Size formsize = new Size(this.Width, this.Height);
             Rectangle bg = new Rectangle(origin, formsize);
@@ -202,6 +210,7 @@ Color.FromArgb(255, 152, 152, 255));
         {
 
             Graphics g = e.Graphics;
+            
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
             TextFormatFlags flags = TextFormatFlags.Left | TextFormatFlags.WordBreak | TextFormatFlags.VerticalCenter;
 
@@ -401,7 +410,7 @@ Color.FromArgb(255, 152, 152, 255));
             Voice1.SetOutputToDefaultAudioDevice();
             Voice1.SelectVoiceByHints(VoiceGender.Male);
             Voice1.Rate = 4;
-            _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4, testbox5 };
+           // _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4, testbox5 };
            
 
             //start first post, then event

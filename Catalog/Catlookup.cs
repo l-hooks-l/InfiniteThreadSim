@@ -79,7 +79,7 @@ namespace Catalog
         public static LoomedFabric ParsePosts(_LoadedBoardFabric boardfabric) 
         {
 
-            Tree replytree = new Tree();
+
             
             
             int OPpostID = 0;
@@ -93,10 +93,11 @@ namespace Catalog
             Console.WriteLine("parse checkpoint 1");
             for (int i = 0; i < boardfabric.LThreads.Count; i++)
             {
+                Tree replytree = new Tree();
                 List<_Pbox> postarray = new List<_Pbox>();
                 List<_Pbox> SortedDisplayList = new List<_Pbox>();
                 string json = boardfabric.LThreads[i].JSON;
-                string postCom = "";
+                string postCom = "postcom";
                 var posts = JObject.Parse(json)["posts"].ToObject<JArray>();
                 OPpostID = Int32.Parse(posts[0]["no"].ToString());
 
@@ -110,10 +111,10 @@ namespace Catalog
                         postCom = posts[d]["com"].ToString();
 
                         string postComBroken = breakpoints.Replace(postCom, replacement);
-                        Console.WriteLine(postCom + "| broken > |" + postComBroken);
+                       // Console.WriteLine(postCom + "| broken > |" + postComBroken);
                         pureCOM = "";
 
-                        if (posts[i]["no"].ToString() != null && posts[i]["com"] != null)  //html agility pack and encoding fix
+                        if (posts[d]["no"].ToString() != null && posts[d]["com"] != null)  //html agility pack and encoding fix
                         {
                             var htmldoc = new HtmlAgilityPack.HtmlDocument();
                             var html = postComBroken;
@@ -139,7 +140,7 @@ namespace Catalog
                     var postweight = PostWeight(threadbank, pureCOM);
                     //vars collected
                     Console.WriteLine("parse checkpoint 2");
-                    Console.WriteLine(pureCOM + " pureCOM");
+                   // Console.WriteLine(pureCOM + " pureCOM");
                     replytree = replies(pureCOM, replytree, postID);  //reply tree creation
                     
                     _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), 0); //idividual post box 
