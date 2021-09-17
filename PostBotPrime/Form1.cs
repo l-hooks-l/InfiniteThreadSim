@@ -36,7 +36,7 @@ Any decent program includes hinge and calf wor enough lower body focus. "
 Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody focus. "
     , 100000, 123456789, new PointF(0, 0),new PointF(0,0), 2);
 
-        public string LoadDirectory = @"C:\chanjson\x";
+        public string LoadDirectory = @"C:\chanjson\g";
         public string ImageDirectory = @"";
         public string MusicDirectory = @"";
 
@@ -47,7 +47,7 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
         int MsTicks = 50;
         float ticks = 0.0f;
         float tickdelta = 1000 / 60;
-        float frameincrease = 1f;
+        float frameincrease = 4f;
         float frames = 0;
         float stopbuffer = 400;
         int buffer = 5;
@@ -64,8 +64,8 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
 
 
         int CurP = 0;
-        int UPThresh = 3;
-        int LOWThresh = 3;
+        int UPThresh = 4;
+        int LOWThresh = 4;
         int UPbumper = 0;
         int LOWbumper = 0;
 
@@ -203,7 +203,7 @@ Color.FromArgb(255, 152, 152, 255));
 
             g.FillRectangle(BGbrush, bg);
 
-            if (loadedthread[1].Dorigin.Y > ScrollCord) //current post location vs scrolling cordinate 
+            if (loadedthread[p].Dorigin.Y - stopbuffer > (ScrollCord + frames)) //current post location vs scrolling cordinate 
             {
                 Scrolling = true;
               //  if (loadedthread[1].Dorigin.Y > HurryUp)
@@ -234,7 +234,7 @@ Color.FromArgb(255, 152, 152, 255));
 
             Dictionary<int, float> PostPoints = new Dictionary<int, float>();
             b = 0;
-            PointF PostOrigin = new PointF(0 + buffer, 0 + buffer);
+            PointF PostOrigin = new PointF(0 + buffer, 0);
             foreach (_Pbox Post in loadedthread)
             {
             TextFormatFlags flags = TextFormatFlags.Left | TextFormatFlags.WordBreak | TextFormatFlags.VerticalCenter;
@@ -563,10 +563,11 @@ Color.FromArgb(255, 152, 152, 255));
             public void ReadNextPost(object sender, EventArgs e)
         {
 
+            
             if (p < loadedthread.Count) //midroll posts
             {
 
-
+            
                 if (loadedthread[p].Data != null)
                 {
                     Voice1.SpeakAsync(loadedthread[p].Data);
@@ -581,10 +582,20 @@ Color.FromArgb(255, 152, 152, 255));
                     //load new thread at this point
                 }
             }
-            p++;
+
             LOWbumper = p - LOWThresh;
-            UPbumper = p + UPThresh;
-            
+            if (LOWbumper < 0)
+            {
+                LOWbumper = 0;
+            }
+             UPbumper = p + UPThresh;
+            if (UPbumper > loadedthread.Count)
+            {
+                UPbumper = loadedthread.Count;
+            }
+ p++;
+            panel1.Invalidate();
+           
         }
 
        private void Form1_Load(object sender, EventArgs e)
@@ -595,7 +606,15 @@ Color.FromArgb(255, 152, 152, 255));
             Voice1.Rate = 4;
             // _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4, testbox5 };
             LOWbumper = p - LOWThresh;
+            if (LOWbumper < 0)
+            {
+                LOWbumper = 0;
+            }
             UPbumper = p + UPThresh;
+            if (UPbumper > loadedthread.Count)
+            {
+                UPbumper = loadedthread.Count;
+            }
 
             //start first post, then event
             Voice1.SpeakAsync("");
