@@ -20,7 +20,7 @@ namespace Catalog
         private const string api_url = @"https://a.4cdn.org/";
         private const string api_img_url = @"https://i.4cdn.org/";
         private static Int32 ReplyThreshold = 30;
-        private static string SaveDirectory = @"C:\Users\Nathan\Documents\ChanJson";
+        private static string SaveDirectory = @"C:\chanjson";
 
         static void Main()
         {
