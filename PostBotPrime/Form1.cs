@@ -23,18 +23,7 @@ namespace PostBotPrime
 
     public partial class Form1 : Form
     {
-        _Pbox testbox = new _Pbox(@"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam gravida sem sem, vel suscipit velit convallis eleifend. Fusce quis tempus lectus, nec euismod odio. Phasellus tristique, sapien a semper sagittis, lectus nunc vulputate felis, a facilisis dui arcu ut augue.", 100000, 123456789, new PointF(0, 0), new PointF(0, 0), 0);
-        _Pbox testbox2 = new _Pbox(@" fsregserserfserfserfserfrefserfserfseffdfsfxsefxsefxsxsxsxsxrexscxddddddddddddddddddddddddddddddddddddddddddddddddddddd
-Wtf ? "
-            , 100000, 123456789, new PointF(0, 0), new PointF(0, 0), 1);
-        _Pbox testbox3 = new _Pbox(@">>63418245
-Any decent program includes hinge and calf wor enough lower body focus. "
-            , 100000, 123456789, new PointF(0, 0), new PointF(0, 0), 2);
-        _Pbox testbox4 = new _Pbox(@"In the end of knee raises, would it be a good idea to do another little movement where I contract the abs a bit more and lift my lower body a bit up/forward? "
-            , 100000, 123456789, new PointF(0, 0), new PointF(0, 0), 0);
-        _Pbox testbox5 = new _Pbox(@">>63418245
-Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody focus. "
-    , 100000, 123456789, new PointF(0, 0),new PointF(0,0), 2);
+ 
 
         public string LoadDirectory = @"C:\chanjson\g";
         public string ImageDirectory = @"";
@@ -47,7 +36,7 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
         int MsTicks = 50;
         float ticks = 0.0f;
         float tickdelta = 1000 / 60;
-        float frameincrease = 4f;
+        float frameincrease = 1f;
         float frames = 0;
         float stopbuffer = 400;
         int buffer = 5;
@@ -68,7 +57,7 @@ Any decent program includes hinge and calf wor aieo aieo goblin aieo goblin ody 
         int LOWThresh = 4;
         int UPbumper = 0;
         int LOWbumper = 0;
-
+        int depththresh = 100;
 
         int p = 0;
         int f = 0;
@@ -112,11 +101,16 @@ Color.FromArgb(255, 152, 152, 255));
             
             if (files.Length != 0)
             {
-                loadedthread = Loadfile(files[f], loadedthread);
+               List<_Pbox> lthread = Loadfile(files[f]);
+              //  var loadedt = lthread.ToArray();
+               // loadedthread = loadedt.ToList<_Pbox>();
+
+                loadedthread = lthread.ToList<_Pbox>(); 
+
             }
             else
             {
-                loadedthread = new List<_Pbox> { testbox, testbox2,testbox3,testbox4,testbox5 };
+                loadedthread = new List<_Pbox>();
             }
             InitializeComponent();
 
@@ -144,7 +138,7 @@ Color.FromArgb(255, 152, 152, 255));
                 // text scroll
                 if (Scrolling == true)
                 {
-                frames= frames + frameincrease;
+                frames= frames + (frameincrease*ScrollingMulti );
                 panel1.Invalidate();
                 
                 }
@@ -163,9 +157,11 @@ Color.FromArgb(255, 152, 152, 255));
             public int ReplyDepth { get; set; }
             public PointF Dorigin { get; set; }
             public PointF EndOrigin { get; set; }
+            public bool hasExt { get; set; }
+            public int Weight { get; set; }
 
             
-          public _Pbox(string Com, int postid, int unix, PointF draworigin, PointF endorigin, int replydepth)
+          public _Pbox(string Com, int postid, int unix, PointF draworigin, PointF endorigin, int replydepth, bool ext, int weight)
             {
 
                 Data = Com;
@@ -174,6 +170,8 @@ Color.FromArgb(255, 152, 152, 255));
                 Dorigin = draworigin;
                 EndOrigin = endorigin;
                 ReplyDepth = replydepth;
+                hasExt = ext;
+                Weight = weight;
             }
  
         }
@@ -206,6 +204,10 @@ Color.FromArgb(255, 152, 152, 255));
             if (loadedthread[p].Dorigin.Y - stopbuffer > (ScrollCord + frames)) //current post location vs scrolling cordinate 
             {
                 Scrolling = true;
+                if (((loadedthread[p].Dorigin.Y - stopbuffer) - (ScrollCord + frames)) > 200)
+                {
+                    ScrollingMulti = ScrollingMulti*2;
+                }
               //  if (loadedthread[1].Dorigin.Y > HurryUp)
                 {
                     // add hurry up to origin to snap back to current post
@@ -235,25 +237,47 @@ Color.FromArgb(255, 152, 152, 255));
             Dictionary<int, float> PostPoints = new Dictionary<int, float>();
             b = 0;
             PointF PostOrigin = new PointF(0 + buffer, 0);
-            foreach (_Pbox Post in loadedthread)
+            for (int i = 0; i < loadedthread.Count; i++)
             {
             TextFormatFlags flags = TextFormatFlags.Left | TextFormatFlags.WordBreak | TextFormatFlags.VerticalCenter;
 
-            //origin for post set
-            
+                //origin for post set
+
+
+                PostOrigin.X = (0 + buffer);
+                if (loadedthread[i].ReplyDepth > 0) //replydepth
+                {
+                    
+                    if (PostOrigin.X < depththresh)
+                    {
+                        PostOrigin.X = PostOrigin.X + (loadedthread[i].ReplyDepth * 8);
+                    }
+                    else
+                    {
+                        PostOrigin.X = PostOrigin.X + depththresh;
+                    }
+                    //create reply chain graphic TO DO
+
+                }
+
 
                 PointF AntiOrigin = new PointF(panel1.Width, PostOrigin.Y);
                 PointF AntiOriginB = new PointF(AntiOrigin.X - buffer, AntiOrigin.Y - buffer);
 
                 PointF ImageOrigin = new PointF(PostOrigin.X + buffer, PostOrigin.Y + buffer);
-                SizeF ImageSize = new SizeF(125, 125);
+                SizeF ImageSize = new SizeF(0, 0);
+                if (loadedthread[i].hasExt == true)
+                {
+                    ImageSize = new SizeF(125, 125);
+                }
+
 
                 PointF HeaderOrigin = new PointF(ImageOrigin.X + ImageSize.Width + buffer, PostOrigin.Y + buffer);
                 SizeF HeaderSize = new SizeF((AntiOriginB.X - HeaderOrigin.X - buffer), (HeaderOrigin.Y - AntiOriginB.Y - buffer));
                 Size HeaderSizeInt = new Size((int)(AntiOriginB.X - HeaderOrigin.X - buffer), (int)(HeaderOrigin.Y - AntiOriginB.Y - buffer));
 
 
-                string header = "No. " + Post.PostID.ToString() + "                  Unix. " + Post.Unix.ToString();
+                string header = "No. " + loadedthread[i].PostID.ToString() + "                  Unix. " + loadedthread[i].Unix.ToString();
 
                 Size hsize = TextRenderer.MeasureText(e.Graphics, header, panel1.Font, HeaderSizeInt, flags);
                 HeaderSize.Height = HeaderSize.Height + hsize.Height;
@@ -268,7 +292,7 @@ Color.FromArgb(255, 152, 152, 255));
 
 
 
-                Size size = TextRenderer.MeasureText(e.Graphics, Post.Data, panel1.Font, TextSizeInt, flags);
+                Size size = TextRenderer.MeasureText(e.Graphics, loadedthread[i].Data, panel1.Font, TextSizeInt, flags);
 
 
                 TextSize.Height = TextSize.Height + size.Height;
@@ -298,8 +322,9 @@ Color.FromArgb(255, 152, 152, 255));
 
                 RollingOrigin.Y = (RollingOrigin.Y + PostBox.Height + buffer);
                 // PostOrigin.Y = +RollingOrigin.Y;
-                Post.Dorigin = PostOrigin;
-                Post.EndOrigin = RollingOrigin;
+                loadedthread[i].Dorigin = PostOrigin;
+                loadedthread[i].EndOrigin = RollingOrigin;
+
                 PostPoints.Add(b, RollingOrigin.Y);
                 PostOrigin.Y =+ RollingOrigin.Y;
                 b++;
@@ -320,9 +345,18 @@ Color.FromArgb(255, 152, 152, 255));
             PointF PostOrigin = new PointF(Post.Dorigin.X, Post.Dorigin.Y - frames);
 
 
+            PostOrigin.X = (0 + buffer);
             if (Post.ReplyDepth > 0) //replydepth
             {
-                PostOrigin.X = PostOrigin.X + (Post.ReplyDepth * 25);
+
+                if (PostOrigin.X < depththresh)
+                {
+                    PostOrigin.X = PostOrigin.X + (Post.ReplyDepth * 8);
+                }
+                else
+                {
+                    PostOrigin.X = PostOrigin.X + depththresh;
+                }
                 //create reply chain graphic TO DO
 
             }
@@ -332,7 +366,12 @@ Color.FromArgb(255, 152, 152, 255));
             PointF AntiOriginB = new PointF(AntiOrigin.X - buffer, AntiOrigin.Y - buffer);
 
             PointF ImageOrigin = new PointF(PostOrigin.X + buffer, PostOrigin.Y + buffer);
-            SizeF ImageSize = new SizeF(125, 125);
+            SizeF ImageSize = new SizeF(0, 0);
+            if (Post.hasExt == true)
+            {
+            ImageSize = new SizeF(125, 125);
+            }
+
 
             PointF HeaderOrigin = new PointF(ImageOrigin.X + ImageSize.Width + buffer, PostOrigin.Y + buffer);
             SizeF HeaderSize = new SizeF((AntiOriginB.X - HeaderOrigin.X - buffer), (HeaderOrigin.Y - AntiOriginB.Y - buffer));
@@ -389,10 +428,6 @@ Color.FromArgb(255, 152, 152, 255));
 
 
         }
-
-
-
-
 
         public void DrawPost(_Pbox POST, PaintEventArgs e)
         {
@@ -528,7 +563,7 @@ Color.FromArgb(255, 152, 152, 255));
             }
 
         }
-        public List<_Pbox> Loadfile(string path, List<_Pbox> sorted)
+        public List<_Pbox> Loadfile(string path)
         {
 
 
@@ -550,15 +585,24 @@ Color.FromArgb(255, 152, 152, 255));
             Stream stream = File.Open(path, FileMode.Open);              //binary load
             BinaryFormatter formatter = new BinaryFormatter();
             List<_Pbox> loadedfile = (List<_Pbox>)formatter.Deserialize(stream);
+            List<_Pbox> freshlist = new List<_Pbox>();
+            foreach (_Pbox post in loadedfile)
+            {
+                int copiedid = post.PostID;
+                string copieddata = post.Data;
+                int copieddepth = post.ReplyDepth;
+                int cunix = post.Unix;
+                bool cext = post.hasExt;
+                int weight = post.Weight;
+                _Pbox freshpost = new _Pbox(copieddata,copiedid,cunix,new PointF(0,0),new PointF(0,0),copieddepth,cext,weight);
+                freshlist.Add(freshpost);
+            }
+
             stream.Close();
-            return loadedfile;
+            return freshlist;
 
         }
 
-                
-           
-
-        
 
             public void ReadNextPost(object sender, EventArgs e)
         {
@@ -664,5 +708,4 @@ Color.FromArgb(255, 152, 152, 255));
     }
 
   
-
 }

@@ -60,7 +60,9 @@ namespace Catalog
             foreach (DisplayThread displayThread in SortedBoardArray.displayThreads)
             {
                 string filename = displayThread.id.ToString();
-                string path = $"{ SaveDirectory }\\{filename}-unsorted";
+                int weight = displayThread.TWeight;
+                string sub = WebUtility.UrlEncode(displayThread.Sub);
+                string path = $"{ SaveDirectory }\\{weight}---{sub}";
                 Console.WriteLine(filename);
                 if(Directory.GetFiles(SaveDirectory).Contains(filename)) //if thread instance is already saved to disk  overwrite
                 {
@@ -83,16 +85,18 @@ namespace Catalog
             
             
             int OPpostID = 0;
+            string OPSub = "";
             string pureCOM = "";
                 string pattern = @"<br>";
                 string replacement = " ";
                 Regex breakpoints = new Regex(pattern);
-            Dictionary<string, int> threadbank = wordBankCompiler(boardfabric.Board);
+            Dictionary<string, int> threadbank = wordBankCompiler2(boardfabric.Board);
             List<DisplayThread> finishedThreads = new List<DisplayThread>();
 
             Console.WriteLine("parse checkpoint 1");
             for (int i = 0; i < boardfabric.LThreads.Count; i++)
             {
+                
                 Tree replytree = new Tree();
                 List<_Pbox> postarray = new List<_Pbox>();
                 List<_Pbox> SortedDisplayList = new List<_Pbox>();
@@ -101,11 +105,28 @@ namespace Catalog
                 var posts = JObject.Parse(json)["posts"].ToObject<JArray>();
                 OPpostID = Int32.Parse(posts[0]["no"].ToString());
 
+                if(posts[0]["sub"] != null)
+                {
+                OPSub = posts[0]["sub"].ToString();
+                }
+                else
+                {
+                    OPSub = "Discussion-Thread";
+                }
+
+
                 for (int d = 0; d < posts.Count; d++) //thread post loop
                 {
 
                     int postID = Int32.Parse(posts[d]["no"].ToString());
                     int postUnix = Int32.Parse(posts[d]["time"].ToString());
+                    bool postImage = false;
+                    if (posts[d]["ext"] != null)
+                    {
+                        postImage = true;
+                    }
+
+                    pureCOM = "";
                     if (posts[d]["no"].ToString() != null && posts[d]["com"] != null)
                     {
                         postCom = posts[d]["com"].ToString();
@@ -136,17 +157,18 @@ namespace Catalog
 
 
                     //post components collected
-
+                    
                     var postweight = PostWeight(threadbank, pureCOM);
                     //vars collected
-                    Console.WriteLine("parse checkpoint 2");
+                 //   Console.WriteLine("parse checkpoint 2");
                    // Console.WriteLine(pureCOM + " pureCOM");
                     replytree = replies(pureCOM, replytree, postID);  //reply tree creation
                     
-                    _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), new PointF(0, 0), 0); //idividual post box 
+                    _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), new PointF(0, 0), 0, postImage,postweight); //idividual post box 
                    var depth = replydepth(postbox, replytree);
                     replytree.getNode(postID).replydepth = depth;
                     postbox.ReplyDepth = depth;
+
 
 
 
@@ -160,17 +182,18 @@ namespace Catalog
 
 
                 }
-                Console.WriteLine("parse checkpoint 3");
+            //    Console.WriteLine("parse checkpoint 3");
 
                    SortedDisplayList = replysort(postarray, replytree);
                // SortedDisplayList = postarray;
-            DisplayThread finishedThread = new DisplayThread(OPpostID, boardfabric.Board, SortedDisplayList);
+              
+            DisplayThread finishedThread = new DisplayThread(OPpostID, boardfabric.Board, SortedDisplayList, OPSub, boardfabric.LThreads[i].Weight);
 
              finishedThreads.Add(finishedThread);      
            
             }
 
-            Console.WriteLine("parse checkpoint 4");
+           // Console.WriteLine("parse checkpoint 4");
 
 
             LoomedFabric loomedFabric = new LoomedFabric(boardfabric.Board, finishedThreads);
@@ -421,6 +444,7 @@ namespace Catalog
                     foreach (Node n in replytree.getNode(post).getchildren()) //for each child
                     {
                         
+                        
                         _Pbox pluckedpost = UnsortedPosts.Find(x => x.PostID == n.id);
                         //UnsortedPosts.Remove(pluckedpost);
                         if (pluckedpost != null)
@@ -590,6 +614,87 @@ namespace Catalog
 
         }
 
+        public static Dictionary<string, int> wordBankCompiler2(string boardId)
+        {
+            Dictionary<string, int> TD = new Dictionary<string, int>();
+
+            // wordbank for post weighing
+
+            // Good Posts
+            // TD.Add("?", 3);
+            TD.Add("prove", 2);
+            TD.Add("how", 2);
+            TD.Add("why", 2);
+            TD.Add("when", 2);
+            TD.Add("talk", 2);
+            TD.Add("discussion", 2);
+            TD.Add("does", 2);
+            TD.Add("be-me", 2);
+            TD.Add("greentext", 20);
+
+            // Filter Posts
+            TD.Add("general", -90);
+
+            //Bad Words
+            TD.Add("nigger", -50);
+            TD.Add("Nigger", -50);
+            TD.Add("kike", -50);
+            TD.Add("Kike", -50);
+
+            // board specific additions
+            /*  switch (boardId)
+                     {
+
+                         case "g":
+
+                      // Good Posts
+                      TD.Add("good", 3);
+
+                      // Filter Posts
+                      TD.Add("filter", -1);
+
+                      //Bad Words
+                      TD.Add("badword", -5);
+
+
+                             break;
+                         case "x":
+
+                      // Good Posts
+                      TD.Add("good", 3);
+
+                      // Filter Posts
+                      TD.Add("filter", -1);
+
+                      //Bad Words
+                      TD.Add("badword", -5);
+
+
+                      break;
+                  case "x":
+
+                      // Good Posts
+                      TD.Add("good", 3);
+
+                      // Filter Posts
+                      TD.Add("filter", -1);
+
+                      //Bad Words
+                      TD.Add("badword", -5);
+
+
+                      break;
+
+              }
+           */
+
+            Console.WriteLine(" ♥ Wordbank Created ♥ ");
+
+            return TD;
+
+
+
+        }
     }
     public class UnloadedCatalogThreads
     {
@@ -610,12 +715,14 @@ namespace Catalog
         public string Board { get; private set; }
         public List<UnloadedCatalogThreads> ThreadArray { get; private set; }
         public string JSON { get; private set; }
+        //public int Weight { get; set; }
 
         public ThreadList(string board, List<UnloadedCatalogThreads> Threads, string json)
         {
             Board = board;
             ThreadArray = Threads;
             JSON = json;
+          //  Weight = weight;
 
         }
 
@@ -773,11 +880,16 @@ namespace Catalog
         public int id { get; set; }
         public string board { get; set; }
         public List<_Pbox> sortedthread { get; set; }
-        public DisplayThread(int ID, string Board, List<_Pbox> SortedThread)
+        public string Sub { get; set; }
+        public int TWeight { get; set; }
+
+        public DisplayThread(int ID, string Board, List<_Pbox> SortedThread, string sub,int weight)
         {
             id = ID;
             board = Board;
             sortedthread = SortedThread;
+            Sub = sub;
+            TWeight = weight;
         }
     }
     public class SaveLoad
