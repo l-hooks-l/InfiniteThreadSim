@@ -25,8 +25,9 @@ namespace PostBotPrime
     {
  
 
-        public string LoadDirectory = @"C:\chanjson\g";
+        public string LoadDirectory = @"C:\chanjson\s4s";
         public string ImageDirectory = @"";
+        public string IconDirectory = @"C:\Users\Nathan\Pictures\Icons";
         public string MusicDirectory = @"";
 
 
@@ -45,9 +46,10 @@ namespace PostBotPrime
         List<PointF> scrollpoints = new List<PointF>();
         public List<_Pbox> loadedthread;
         public Dictionary<int, float> ThreadPoints;
+        public string CB = "init";
 
         SpeechSynthesizer Voice1 = new SpeechSynthesizer();
-
+        Image IconImage;
         float ScrollCord = 0.00f;
         int ScrollingMulti = 1;
 
@@ -79,7 +81,7 @@ namespace PostBotPrime
        Color.FromArgb(255, 152, 152, 255));  // Opaque blue)
 
      LinearGradientBrush Vanbrush = new LinearGradientBrush(new Point(0, 0), new Point(500, 500),
-Color.FromArgb(255, 152, 255, 152),   // 
+Color.FromArgb(255, 252, 255, 152),   // 
 Color.FromArgb(255, 152, 152, 255));
 
         LinearGradientBrush Van2brush = new LinearGradientBrush(new Point(0, 0), new Point(1000, 500),
@@ -140,6 +142,8 @@ Color.FromArgb(255, 152, 152, 255));
                 {
                 frames= frames + (frameincrease*ScrollingMulti );
                 panel1.Invalidate();
+                //    panel2.Invalidate();
+                //    panel3.Invalidate();
                 
                 }
 
@@ -159,9 +163,10 @@ Color.FromArgb(255, 152, 152, 255));
             public PointF EndOrigin { get; set; }
             public bool hasExt { get; set; }
             public int Weight { get; set; }
+            public string Board { get; set; }
 
             
-          public _Pbox(string Com, int postid, int unix, PointF draworigin, PointF endorigin, int replydepth, bool ext, int weight)
+          public _Pbox(string Com, int postid, int unix, PointF draworigin, PointF endorigin, int replydepth, bool ext, int weight, string board)
             {
 
                 Data = Com;
@@ -172,6 +177,7 @@ Color.FromArgb(255, 152, 152, 255));
                 ReplyDepth = replydepth;
                 hasExt = ext;
                 Weight = weight;
+                Board = board;
             }
  
         }
@@ -586,6 +592,14 @@ Color.FromArgb(255, 152, 152, 255));
             BinaryFormatter formatter = new BinaryFormatter();
             List<_Pbox> loadedfile = (List<_Pbox>)formatter.Deserialize(stream);
             List<_Pbox> freshlist = new List<_Pbox>();
+            foreach(_Pbox post in loadedfile)
+            {
+                //setting images to refrenced list
+
+                //if post does not have an image tag set one from image directory
+
+
+            }
             foreach (_Pbox post in loadedfile)
             {
                 int copiedid = post.PostID;
@@ -594,7 +608,8 @@ Color.FromArgb(255, 152, 152, 255));
                 int cunix = post.Unix;
                 bool cext = post.hasExt;
                 int weight = post.Weight;
-                _Pbox freshpost = new _Pbox(copieddata,copiedid,cunix,new PointF(0,0),new PointF(0,0),copieddepth,cext,weight);
+                string board = post.Board;
+                _Pbox freshpost = new _Pbox(copieddata,copiedid,cunix,new PointF(0,0),new PointF(0,0),copieddepth,cext,weight,board);
                 freshlist.Add(freshpost);
             }
 
@@ -681,18 +696,50 @@ Color.FromArgb(255, 152, 152, 255));
 
         private void panel3_Paint(object sender, PaintEventArgs e)
         {
+
+            //sidebar
             Graphics g = e.Graphics;
             Point origin = new Point(0, 0);
             Size formsize = new Size((this.panel3.Width - 1), (this.panel3.Height - 1));
             Size formborder = new Size(this.panel3.Width, this.panel3.Height);
             Rectangle bg = new Rectangle(origin, formborder);
             Rectangle brd = new Rectangle(origin, formsize);
-            g.FillRectangle(Vanbrush, bg);
+
+  /*          if (loaded != true)
+            {
+
+            if (IconDirectory.Equals(string.Empty)) IconDirectory = $"{Directory.GetCurrentDirectory()}\\{loadedthread[0].Board}";
+            else IconDirectory = $"{IconDirectory}\\{loadedthread[0].Board}";
+
+               // Directory.CreateDirectory(IconDirectory);
+                var files = Directory.GetFiles(IconDirectory);
+
+                 
+                if (files.Length == 0)
+                {
+
+                }
+                else
+                {
+                    IconImage = Image.FromFile(files[0]);
+                }
+
+
+            }
+
+
+            if (IconImage != null)
+            {
+                g.DrawImage(IconImage, bg);
+            } */
+
+            g.FillRectangle(Van2brush, bg);
             g.DrawRectangle(mypen, brd);
         }
 
         private void panel2_Paint(object sender, PaintEventArgs e)
         {
+            //icon top right
             Graphics g = e.Graphics;
             Point origin = new Point(0, 0);
             Size formsize = new Size((this.panel2.Width-1), (this.panel2.Height-1));
@@ -700,9 +747,44 @@ Color.FromArgb(255, 152, 152, 255));
             Rectangle bg = new Rectangle(origin, formborder);
             Rectangle brd = new Rectangle(origin, formsize);
 
-            g.FillRectangle(Vanbrush, bg);
+
+            if (loaded != true)
+            {
+
+                if (IconDirectory.Equals(string.Empty)) IconDirectory = $"{Directory.GetCurrentDirectory()}\\{loadedthread[0].Board}";
+                else IconDirectory = $"{IconDirectory}\\{loadedthread[0].Board}";
+
+               // Directory.CreateDirectory(IconDirectory);
+                var files = Directory.GetFiles(IconDirectory);
+
+
+                if (files.Length == 0)
+                {
+
+                }
+                else
+                {
+                    IconImage = Image.FromFile(files[0]);
+                }
+
+
+            }
+
+
+            if (IconImage != null)
+            {
+                g.DrawImage(IconImage, bg);
+            }
+
+
+
+          //  g.FillRectangle(Vanbrush, bg);
            // g.DrawRectangle(mypen2, bg);
             g.DrawRectangle(mypen, brd);
+
+
+
+
 
         }
     }

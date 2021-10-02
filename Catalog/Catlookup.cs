@@ -56,14 +56,15 @@ namespace Catalog
             Console.ReadLine();
             if (SaveDirectory.Equals(string.Empty)) SaveDirectory = $"{Directory.GetCurrentDirectory()}\\{SortedBoardArray.board}";
             else SaveDirectory = $"{SaveDirectory}\\{SortedBoardArray.board}";
-            Directory.CreateDirectory(SaveDirectory); //creates location for downloaded images
+            Directory.CreateDirectory(SaveDirectory); //creates location for downloaded threads
             foreach (DisplayThread displayThread in SortedBoardArray.displayThreads)
             {
                 string filename = displayThread.id.ToString();
                 int weight = displayThread.TWeight;
                 string sub = WebUtility.UrlEncode(displayThread.Sub);
+                Console.WriteLine(sub);
                 string path = $"{ SaveDirectory }\\{weight}---{sub}";
-                Console.WriteLine(filename);
+                Console.WriteLine(path);
                 if(Directory.GetFiles(SaveDirectory).Contains(filename)) //if thread instance is already saved to disk  overwrite
                 {
                     SaveLoad.Save(displayThread.sortedthread, path);
@@ -163,8 +164,12 @@ namespace Catalog
                  //   Console.WriteLine("parse checkpoint 2");
                    // Console.WriteLine(pureCOM + " pureCOM");
                     replytree = replies(pureCOM, replytree, postID);  //reply tree creation
+
+
+                    //walk current posts weight down reply tree from child to root
                     
-                    _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), new PointF(0, 0), 0, postImage,postweight); //idividual post box 
+                    _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), new PointF(0, 0), 0, postImage,postweight,boardfabric.Board); //idividual post box 
+
                    var depth = replydepth(postbox, replytree);
                     replytree.getNode(postID).replydepth = depth;
                     postbox.ReplyDepth = depth;
@@ -399,6 +404,7 @@ namespace Catalog
 
             return SortedPosts;
         }
+     
         public static int replydepth(_Pbox post, Tree replytree)
         {
             var depth = 0;
@@ -482,6 +488,21 @@ namespace Catalog
             var trueweight = preMulti * (1 + collectiveMulti / 4);
 
             return trueweight;
+        }
+        public static string PostImageTag(Dictionary<string, string> keytags, string content)
+        {
+            foreach (KeyValuePair<string, string> kvp in keytags)
+            {
+                var keywords = kvp.Key;
+                Regex RX = new Regex(@keywords);
+
+                if (RX.IsMatch(content) == true)
+                {
+                    MatchCollection matches = RX.Matches(content);
+                    //add path to array and choose one path at random
+                }
+
+            }
         }
 
         public static int PostWeight(Dictionary<string, int> WordBank, string content)
