@@ -156,20 +156,23 @@ Color.FromArgb(255, 152, 152, 255));
         {
 
             public string Data { get; private set; }
+            public string SpokenData { get; set; }
             public int PostID { get; private set; }
             public int Unix { get; private set; }
             public int ReplyDepth { get; set; }
             public PointF Dorigin { get; set; }
             public PointF EndOrigin { get; set; }
             public bool hasExt { get; set; }
+            public string Imagepath { get; set; }
             public int Weight { get; set; }
             public string Board { get; set; }
 
             
-          public _Pbox(string Com, int postid, int unix, PointF draworigin, PointF endorigin, int replydepth, bool ext, int weight, string board)
+          public _Pbox(string Com,string spokencom, int postid, int unix, PointF draworigin, PointF endorigin, int replydepth, bool ext,string imagepath, int weight, string board)
             {
 
                 Data = Com;
+                SpokenData = spokencom;
                 PostID = postid;
                 Unix = unix;
                 Dorigin = draworigin;
@@ -178,6 +181,7 @@ Color.FromArgb(255, 152, 152, 255));
                 hasExt = ext;
                 Weight = weight;
                 Board = board;
+                Imagepath = imagepath;
             }
  
         }
@@ -604,12 +608,14 @@ Color.FromArgb(255, 152, 152, 255));
             {
                 int copiedid = post.PostID;
                 string copieddata = post.Data;
+                string cspoken = post.SpokenData;
                 int copieddepth = post.ReplyDepth;
                 int cunix = post.Unix;
                 bool cext = post.hasExt;
+                string cimg = post.Imagepath;
                 int weight = post.Weight;
                 string board = post.Board;
-                _Pbox freshpost = new _Pbox(copieddata,copiedid,cunix,new PointF(0,0),new PointF(0,0),copieddepth,cext,weight,board);
+                _Pbox freshpost = new _Pbox(copieddata,cspoken,copiedid,cunix,new PointF(0,0),new PointF(0,0),copieddepth,cext,cimg,weight,board);
                 freshlist.Add(freshpost);
             }
 

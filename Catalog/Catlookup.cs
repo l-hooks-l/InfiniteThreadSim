@@ -10,6 +10,7 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.Runtime.Serialization.Formatters.Binary;
 using static PostBotPrime.Form1;
+using Shell32;
 
 namespace Catalog
 {
@@ -21,6 +22,13 @@ namespace Catalog
         private const string api_img_url = @"https://i.4cdn.org/";
         private static Int32 ReplyThreshold = 30;
         private static string SaveDirectory = @"C:\chanjson";
+        private static string notags = "";
+        private static string imagepath = "";
+
+        public static  Shell32.Shell shell = new Shell32.Shell();
+        public static Shell32.Folder objFolder;
+
+       // objFolder = shell.NameSpace(imagepath);
 
         static void Main()
         {
@@ -87,12 +95,15 @@ namespace Catalog
             
             int OPpostID = 0;
             string OPSub = "";
-            string pureCOM = "";
+         //   string pureCOM = "";
                 string pattern = @"<br>";
                 string replacement = " ";
                 Regex breakpoints = new Regex(pattern);
             Dictionary<string, int> threadbank = wordBankCompiler2(boardfabric.Board);
+            Dictionary<string, string> keybank = imgtagCompiler();
             List<DisplayThread> finishedThreads = new List<DisplayThread>();
+
+            objFolder = shell.NameSpace(imagepath);
 
             Console.WriteLine("parse checkpoint 1");
             for (int i = 0; i < boardfabric.LThreads.Count; i++)
@@ -106,7 +117,10 @@ namespace Catalog
                 var posts = JObject.Parse(json)["posts"].ToObject<JArray>();
                 OPpostID = Int32.Parse(posts[0]["no"].ToString());
 
-                if(posts[0]["sub"] != null)
+
+
+
+                if (posts[0]["sub"] != null)
                 {
                 OPSub = posts[0]["sub"].ToString();
                 }
@@ -118,16 +132,42 @@ namespace Catalog
 
                 for (int d = 0; d < posts.Count; d++) //thread post loop
                 {
-
+                    string pureCOM = "";
+                    string SpokenCom = "";
                     int postID = Int32.Parse(posts[d]["no"].ToString());
                     int postUnix = Int32.Parse(posts[d]["time"].ToString());
                     bool postImage = false;
+                    string hash = "E";
+                    string imgdefinition = "E";
                     if (posts[d]["ext"] != null)
                     {
                         postImage = true;
+                        hash = posts[d]["md5"].ToString();
+                        foreach (string path in Directory.GetFiles(imagepath))
+                        {
+                            //check this hash against every image in the sfw database
+                            foreach ( ShellFolderItem item in objFolder.Items())
+                            {
+                                var SIhash = item.ExtendedProperty("Hash");
+                                if (SIhash == hash)
+                                {
+                                    //image is ok to display
+                                    imgdefinition = item.Path;
+
+
+                                    break;
+
+                                }
+
+                                //image is not in directory/ not ok
+                                //send image to processing pile?
+
+                            }
+                            
+                        }
                     }
 
-                    pureCOM = "";
+  
                     if (posts[d]["no"].ToString() != null && posts[d]["com"] != null)
                     {
                         postCom = posts[d]["com"].ToString();
@@ -146,6 +186,7 @@ namespace Catalog
                                 htmldoc.LoadHtml(html);
                                 var htmlparsed = htmldoc.DocumentNode.InnerText;
                                 pureCOM = WebUtility.HtmlDecode(htmlparsed);
+                                SpokenCom = SpokenFix(pureCOM);
 
                             }
 
@@ -155,10 +196,20 @@ namespace Catalog
 
 
                     }
+                    string imgtag = "";
+                    if (imgdefinition == "E")
+                    {
 
+                    imgtag = PostImageTag(keybank,pureCOM);         
+                        
+                    }
+                    else
+                    {
+                        imgtag = imgdefinition;
+                    }
 
                     //post components collected
-                    
+
                     var postweight = PostWeight(threadbank, pureCOM);
                     //vars collected
                  //   Console.WriteLine("parse checkpoint 2");
@@ -166,9 +217,11 @@ namespace Catalog
                     replytree = replies(pureCOM, replytree, postID);  //reply tree creation
 
 
+
+
                     //walk current posts weight down reply tree from child to root
                     
-                    _Pbox postbox = new _Pbox(pureCOM, postID, postUnix, new PointF(0, 0), new PointF(0, 0), 0, postImage,postweight,boardfabric.Board); //idividual post box 
+                    _Pbox postbox = new _Pbox(pureCOM,SpokenCom, postID, postUnix, new PointF(0, 0), new PointF(0, 0), 0, postImage,imgtag,postweight,boardfabric.Board); //idividual post box 
 
                    var depth = replydepth(postbox, replytree);
                     replytree.getNode(postID).replydepth = depth;
@@ -204,6 +257,19 @@ namespace Catalog
             LoomedFabric loomedFabric = new LoomedFabric(boardfabric.Board, finishedThreads);
             return loomedFabric;
 
+        }
+
+        public static string SpokenFix(string pureCOM)
+        {
+            string pattern = "(?<=>>)(((?<!>>>)[0-9]))+";
+            string urlpattern = @"(ht|f)tp(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&%\$#_]*)?$";
+            Regex Replyremover = new Regex(pattern);
+            Regex urlremover = new Regex(urlpattern);
+
+
+            string tempcom = Replyremover.Replace(pureCOM," ");
+            string Spoken = urlremover.Replace(tempcom, " ");
+            return Spoken;
         }
 
         public static async Task<ThreadList> LoadCatalog(string BOARD)
@@ -491,17 +557,72 @@ namespace Catalog
         }
         public static string PostImageTag(Dictionary<string, string> keytags, string content)
         {
+
+            string[] posspaths = { };
+
+            Random rnd = new Random();
+
             foreach (KeyValuePair<string, string> kvp in keytags)
             {
                 var keywords = kvp.Key;
-                Regex RX = new Regex(@keywords);
+
+                Regex RX = new Regex(@keywords, RegexOptions.IgnoreCase);
+                
 
                 if (RX.IsMatch(content) == true)
                 {
                     MatchCollection matches = RX.Matches(content);
-                    //add path to array and choose one path at random
+
+                    foreach (Match match in matches)
+                    {
+
+
+
+                        //add current path to possible paths array
+                        //kvp  text/imgtag  add all files with tag to posspath array
+                        foreach(ShellFolderItem item in objFolder.Items())
+                        {
+                            if(item.ExtendedProperty("ImgTag") == "")
+                            {
+                                //the image does not contain a img tag
+                            }
+                            else
+                            {
+                                string tags = item.ExtendedProperty("ImgTag");
+
+                                if(RX.IsMatch(tags) == true)
+                                {
+
+                                MatchCollection tagmatch = RX.Matches(tags);
+
+                                    foreach(Match match1 in tagmatch)
+                                    {
+                                        //add every tag match's path to possible paths
+                                        posspaths.Append<string>(item.Path);
+
+                                    }
+                                }
+
+                            }
+                        }
+
+                    }
+
+
                 }
 
+            }
+
+            //draw one path out of path array 
+          if (posspaths.Length > 0)
+            {
+                int chance = rnd.Next(0, posspaths.Length);
+                string Path = posspaths[chance];
+                return Path;
+            }
+          else
+            {
+                return "error";
             }
         }
 
@@ -710,6 +831,28 @@ namespace Catalog
            */
 
             Console.WriteLine(" ♥ Wordbank Created ♥ ");
+
+            return TD;
+
+
+
+        }
+        public static Dictionary<string, string> imgtagCompiler()
+        {
+            //check original attachments hash and compare it to directory of ok images
+            //if theres a match set image as the original post image
+            //otherwise improvise
+            //one directory with images with tags, that are added to a list
+
+            //text keyword / filetag
+
+            //creates dict of keywords and directories paths full of relevant images
+            Dictionary<string, string> TD = new Dictionary<string, string>();
+
+            TD.Add("frog","frog");
+
+   
+            Console.WriteLine(" ♥ TagBank Created ♥ ");
 
             return TD;
 
