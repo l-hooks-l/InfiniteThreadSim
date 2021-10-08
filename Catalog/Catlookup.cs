@@ -227,7 +227,7 @@ namespace Catalog
                     //   Console.WriteLine("parse checkpoint 2");
                     // Console.WriteLine(pureCOM + " pureCOM");
                     Console.WriteLine("pre replies");
-                    replytree = replies(pureCOM, replytree, postID);  //reply tree creation
+                    replytree = replies(pureCOM, replytree, postID, postweight);  //reply tree creation adds id and weight to node
                     Console.WriteLine("replies finished");
 
 
@@ -480,12 +480,13 @@ namespace Catalog
             return replytree;
         }
 
-        public static Tree replies(string postContent, Tree replytree, int postID)
+        public static Tree replies(string postContent, Tree replytree, int postID, int postW)
         {
             string pattern = "(?<=>>)(((?<!>>>)[0-9]))+";
             Regex ReplyFinder = new Regex(pattern,  RegexOptions.IgnoreCase);
             Node postNode = new Node();
             postNode.id = postID;
+            postNode.replyweight = postW;
             MatchCollection matches = ReplyFinder.Matches(postContent);
             if (matches.Count != 0)
             {
@@ -563,6 +564,60 @@ namespace Catalog
 
             return 0;  
 
+
+        }
+
+        public static List<_Pbox> Sortbyweight(List<_Pbox> unsorted, Tree replytree)
+        {
+            List<_Pbox> SortedPosts = new List<_Pbox>();
+            List<Dictionary<int, int>> paths = new List<Dictionary<int, int>>();
+
+
+            foreach (_Pbox upost in unsorted)
+            {
+
+
+                if (upost.ReplyDepth == 0) //if post is original root post
+                {
+
+                    if (replytree.getNode(upost.PostID) == null) //replytree id is null
+                    {
+
+                    }
+                    else
+                    {
+                        Node currentnode = replytree.getNode(upost.PostID); //reply tree node is ok
+                        paths = NodePaths(currentnode,replytree);
+
+                    }
+
+
+                }
+                else //if the post is a reply
+                {
+
+                }
+
+            }
+
+
+
+        }
+        public static List<Dictionary<int,int>> NodePaths(Node cnode, Tree replytree)
+        {
+            Dictionary<int, int> rollingpath = new Dictionary<int, int>();
+
+            List<Node> kids = cnode.getchildren();
+
+            rollingpath.Add(cnode.id, cnode.replyweight);// first reply in chains,
+
+            foreach (Node child in kids)
+            {
+
+
+
+            }
+            
 
         }
         public static List<_Pbox> childloop(int post, Tree replytree, List<_Pbox> SortedPosts, List<_Pbox> UnsortedPosts)
@@ -1040,6 +1095,7 @@ namespace Catalog
 
         public Tree tree { get; set; }
         public int replydepth { get; set; }
+        public int replyweight { get; set; }
 
 
         public Node()
@@ -1208,6 +1264,9 @@ namespace Catalog
 
         }
     }
+
+
+
 
 }
 

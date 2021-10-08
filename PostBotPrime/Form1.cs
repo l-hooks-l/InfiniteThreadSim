@@ -212,6 +212,9 @@ Color.FromArgb(255, 152, 152, 255));
 
             g.FillRectangle(BGbrush, bg);
 
+            // if p is greater then loadedposts.count load up next thread
+
+
             if (loadedthread[p].Dorigin.Y - stopbuffer > (ScrollCord + frames)) //current post location vs scrolling cordinate 
             {
                 Scrolling = true;
