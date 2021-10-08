@@ -14,6 +14,7 @@ using Shell32;
 
 namespace Catalog
 {
+    
     class Catlookup
     {
         public static WebClient WebClient = new WebClient();
@@ -22,20 +23,21 @@ namespace Catalog
         private const string api_img_url = @"https://i.4cdn.org/";
         private static Int32 ReplyThreshold = 30;
         private static string SaveDirectory = @"C:\chanjson";
-        private static string notags = "";
-        private static string imagepath = "";
+        private static string notags = "";    //undefined name for images without image partner
+        private static string imagepath = @"C:\Users\Nathan\Pictures\Icons"; //folder tagged images hangout in
+        public static int ichecker = 0;
 
-        public static  Shell32.Shell shell = new Shell32.Shell();
-        public static Shell32.Folder objFolder;
+       // public static  Shell32.Shell shell = new Shell32.Shell();
+       // public static Shell32.Folder objFolder;
 
        // objFolder = shell.NameSpace(imagepath);
-
+       //[STAThreadAttribute]
         static void Main()
         {
             System.Console.Title = "Board Inspector";
             Menu().GetAwaiter().GetResult();
         }
-
+        //[STAThread]
         private static async Task Menu()
         {
             var board = GetBoard();
@@ -97,18 +99,18 @@ namespace Catalog
             string OPSub = "";
          //   string pureCOM = "";
                 string pattern = @"<br>";
-                string replacement = " ";
+                string replacement = " \r\n";
                 Regex breakpoints = new Regex(pattern);
             Dictionary<string, int> threadbank = wordBankCompiler2(boardfabric.Board);
             Dictionary<string, string> keybank = imgtagCompiler();
             List<DisplayThread> finishedThreads = new List<DisplayThread>();
-
-            objFolder = shell.NameSpace(imagepath);
+           // objFolder = GetShell32NameSpaceFolder(imagepath);
+           // objFolder = shell.NameSpace(imagepath);
 
             Console.WriteLine("parse checkpoint 1");
             for (int i = 0; i < boardfabric.LThreads.Count; i++)
             {
-                
+
                 Tree replytree = new Tree();
                 List<_Pbox> postarray = new List<_Pbox>();
                 List<_Pbox> SortedDisplayList = new List<_Pbox>();
@@ -132,6 +134,7 @@ namespace Catalog
 
                 for (int d = 0; d < posts.Count; d++) //thread post loop
                 {
+               // ichecker++;
                     string pureCOM = "";
                     string SpokenCom = "";
                     int postID = Int32.Parse(posts[d]["no"].ToString());
@@ -139,35 +142,35 @@ namespace Catalog
                     bool postImage = false;
                     string hash = "E";
                     string imgdefinition = "E";
-                    if (posts[d]["ext"] != null)
+                    Console.WriteLine("pre image");
+                    if (posts[d]["ext"] != null) //IF POST HAS EXTENSION
                     {
                         postImage = true;
                         hash = posts[d]["md5"].ToString();
-                        foreach (string path in Directory.GetFiles(imagepath))
+
+                        foreach (string path in Directory.GetFiles($"{imagepath}\\verified"))
                         {
+
                             //check this hash against every image in the sfw database
-                            foreach ( ShellFolderItem item in objFolder.Items())
+                            string ext = Path.GetExtension(path);
+                            string imgpath = $"{imagepath}\\{hash}{ext}";
+
+                            if (path == imgpath)
                             {
-                                var SIhash = item.ExtendedProperty("Hash");
-                                if (SIhash == hash)
-                                {
-                                    //image is ok to display
-                                    imgdefinition = item.Path;
+                                imgdefinition = imgpath;
+                            }
 
 
-                                    break;
-
-                                }
 
                                 //image is not in directory/ not ok
                                 //send image to processing pile?
 
-                            }
+                            
                             
                         }
                     }
+                    Console.WriteLine("image finished");
 
-  
                     if (posts[d]["no"].ToString() != null && posts[d]["com"] != null)
                     {
                         postCom = posts[d]["com"].ToString();
@@ -186,8 +189,9 @@ namespace Catalog
                                 htmldoc.LoadHtml(html);
                                 var htmlparsed = htmldoc.DocumentNode.InnerText;
                                 pureCOM = WebUtility.HtmlDecode(htmlparsed);
-                                SpokenCom = SpokenFix(pureCOM);
-
+                                Console.WriteLine("textparse start");
+                               // SpokenCom = SpokenFix(pureCOM);
+                                Console.WriteLine("textparse finished");
                             }
 
                         }
@@ -197,36 +201,46 @@ namespace Catalog
 
                     }
                     string imgtag = "";
-                    if (imgdefinition == "E")
-                    {
 
-                    imgtag = PostImageTag(keybank,pureCOM);         
+                    if(postImage == true)
+                    { 
+
+                    
+                       
+                        if (imgdefinition == "E") //md5 hash not found earlier
+                            {
+
+                             imgtag = PostImageTag(keybank,pureCOM);         
                         
+                            }
+                        else   //md5 hash found set hash path to imgtag
+                            {
+                            imgtag = imgdefinition;
+                            }
                     }
-                    else
-                    {
-                        imgtag = imgdefinition;
-                    }
+                   
 
                     //post components collected
 
                     var postweight = PostWeight(threadbank, pureCOM);
                     //vars collected
-                 //   Console.WriteLine("parse checkpoint 2");
-                   // Console.WriteLine(pureCOM + " pureCOM");
+                    //   Console.WriteLine("parse checkpoint 2");
+                    // Console.WriteLine(pureCOM + " pureCOM");
+                    Console.WriteLine("pre replies");
                     replytree = replies(pureCOM, replytree, postID);  //reply tree creation
-
+                    Console.WriteLine("replies finished");
 
 
 
                     //walk current posts weight down reply tree from child to root
-                    
-                    _Pbox postbox = new _Pbox(pureCOM,SpokenCom, postID, postUnix, new PointF(0, 0), new PointF(0, 0), 0, postImage,imgtag,postweight,boardfabric.Board); //idividual post box 
 
-                   var depth = replydepth(postbox, replytree);
+                    _Pbox postbox = new _Pbox(pureCOM,SpokenCom, postID, postUnix, new PointF(0, 0), new PointF(0, 0), 0, postImage,imgtag,postweight,boardfabric.Board); //idividual post box 
+                                                                                                                                                                          // ichecker++;
+                    Console.WriteLine("replydepth start");
+                    var depth = replydepth(postbox, replytree);
+                    Console.WriteLine("replydepth finish");
                     replytree.getNode(postID).replydepth = depth;
                     postbox.ReplyDepth = depth;
-
 
 
 
@@ -237,10 +251,11 @@ namespace Catalog
                         //     postarray.Append<_Pbox>(postbox);
                         postarray.Add(postbox);
                     }
-
+                    ichecker++;
+                    Console.WriteLine(ichecker);
 
                 }
-            //    Console.WriteLine("parse checkpoint 3");
+                Console.WriteLine("parse checkpoint 3");
 
                    SortedDisplayList = replysort(postarray, replytree);
                // SortedDisplayList = postarray;
@@ -355,6 +370,50 @@ namespace Catalog
             Console.WriteLine(@"              Choose a Board                    ");
             return System.Console.ReadLine();
         }
+
+        public static Shell32.Folder GetShell32NameSpaceFolder(Object folder)
+        {
+            Type shellAppType = Type.GetTypeFromProgID("Shell.Application");
+
+            Object shell = Activator.CreateInstance(shellAppType);
+            return (Shell32.Folder)shellAppType.InvokeMember("NameSpace",
+          System.Reflection.BindingFlags.InvokeMethod, null, shell, new object[] { folder });
+        }
+
+        public static string GetExtendedFileProperty(string filePath, string propertyName)
+        {
+            string value = string.Empty;
+            string baseFolder = Path.GetDirectoryName(filePath);
+            string fileName = Path.GetFileName(filePath);
+
+            //Method to load and execute the Shell object for Windows server 8 environment otherwise you get "Unable to cast COM object of type 'System.__ComObject' to interface type 'Shell32.Shell'"
+            Type shellAppType = Type.GetTypeFromProgID("Shell.Application");
+            Object shell = Activator.CreateInstance(shellAppType);
+            Shell32.Folder shellFolder = (Shell32.Folder)shellAppType.InvokeMember("NameSpace", System.Reflection.BindingFlags.InvokeMethod, null, shell, new object[] { baseFolder });
+
+            //Parsename will find the specific file I'm looking for in the Shell32.Folder object
+            Shell32.FolderItem folderitem = shellFolder.ParseName(fileName);
+            if (folderitem != null)
+            {
+                for (int i = 0; i < short.MaxValue; i++)
+                {
+                    //Get the property name for property index i
+                    string property = shellFolder.GetDetailsOf(null, i);
+
+                    //Will be empty when all possible properties has been looped through, break out of loop
+                    if (String.IsNullOrEmpty(property)) break;
+
+                    //Skip to next property if this is not the specified property
+                    if (property != propertyName) continue;
+
+                    //Read value of property
+                    value = shellFolder.GetDetailsOf(folderitem, i);
+                }
+            }
+            //returns string.Empty if no value was found for the specified property
+            return value;
+        }
+
 
         public static Tree repliesnew(string postContent, Tree replytree, int postID)
         {
@@ -576,11 +635,26 @@ namespace Catalog
                     foreach (Match match in matches)
                     {
 
+                        //keytag match found, add random file from kvp.value path
 
+                       string[] dirfiles = Directory.GetFiles(kvp.Value);
+                        if(dirfiles.Length > 0) //more then 0 files in dir
+                        {
+                            //random files from directoryn to possible path  Faster
+                            int c = rnd.Next(0,dirfiles.Length);
+                            posspaths.Append<string>(dirfiles[c]);
+
+                            //add all paths in directory to possible paths
+                            foreach(string dpath in dirfiles)
+                            {
+                            posspaths.Append<string>(dpath);
+                            }
+
+                        }
 
                         //add current path to possible paths array
                         //kvp  text/imgtag  add all files with tag to posspath array
-                        foreach(ShellFolderItem item in objFolder.Items())
+                     /*   foreach(ShellFolderItem item in objFolder.Items())
                         {
                             if(item.ExtendedProperty("ImgTag") == "")
                             {
@@ -605,6 +679,7 @@ namespace Catalog
 
                             }
                         }
+                        */
 
                     }
 
@@ -614,15 +689,29 @@ namespace Catalog
             }
 
             //draw one path out of path array 
-          if (posspaths.Length > 0)
+            if (posspaths.Length > 0)
             {
                 int chance = rnd.Next(0, posspaths.Length);
                 string Path = posspaths[chance];
                 return Path;
             }
-          else
+            else
             {
-                return "error";
+
+
+                //no tag paths to choose, pick path from defaut path
+               string[] defaultpath = Directory.GetFiles($"{imagepath}\\default");
+
+
+                if(defaultpath.Length <= 0)
+                {
+                return "error no files in default";
+                }
+                else
+                {
+                  int i =  rnd.Next(0, defaultpath.Length - 1);
+                    return defaultpath[i];
+                }
             }
         }
 
@@ -655,7 +744,7 @@ namespace Catalog
 
             List<LoadedThread> LThreadArray = new List<LoadedThread>();
 
-            for(int i = 0; i < 2; i++)
+            for(int i = 0; i < 1; i++)
             {
                 await Task.Delay(15000);
                 var urlendpoint = _Tlist.ThreadArray[i].ThreadUrl;
@@ -839,20 +928,28 @@ namespace Catalog
         }
         public static Dictionary<string, string> imgtagCompiler()
         {
-            //check original attachments hash and compare it to directory of ok images
-            //if theres a match set image as the original post image
-            //otherwise improvise
-            //one directory with images with tags, that are added to a list
-
-            //text keyword / filetag
+            //ideally this should use an images tags to decide all from one directory, very slow iteration
+            //image path workaround but costs more file storeage for duplicate images
 
             //creates dict of keywords and directories paths full of relevant images
+
+            //keyword : path-directory
             Dictionary<string, string> TD = new Dictionary<string, string>();
 
-            TD.Add("frog","frog");
+            TD.Add("frog",$"{imagepath}\\frog");
 
    
             Console.WriteLine(" ♥ TagBank Created ♥ ");
+
+            foreach (KeyValuePair<string,string> kvp in TD)
+            {
+                Directory.CreateDirectory(kvp.Value);
+                
+                Console.WriteLine($" ♥ Tag Directory Created {kvp.Value} ♥ ");
+            }
+
+            Directory.CreateDirectory($"{imagepath}\\default");
+            Directory.CreateDirectory($"{imagepath}\\verified");
 
             return TD;
 

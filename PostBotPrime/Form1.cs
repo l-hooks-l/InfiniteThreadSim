@@ -25,7 +25,7 @@ namespace PostBotPrime
     {
  
 
-        public string LoadDirectory = @"C:\chanjson\s4s";
+        public string LoadDirectory = @"C:\chanjson\x";
         public string ImageDirectory = @"";
         public string IconDirectory = @"C:\Users\Nathan\Pictures\Icons";
         public string MusicDirectory = @"";
@@ -89,7 +89,7 @@ Color.FromArgb(255, 152, 255, 152),   //
 Color.FromArgb(255, 152, 152, 255));
 
         Font stylefont;
-        
+        int checker = 0;
 
         //Pen lgpen = new Pen(LGbrush);
         Pen mypen2 = new Pen(Color.FromArgb(255, 106, 0, 128));
@@ -107,12 +107,13 @@ Color.FromArgb(255, 152, 152, 255));
               //  var loadedt = lthread.ToArray();
                // loadedthread = loadedt.ToList<_Pbox>();
 
-                loadedthread = lthread.ToList<_Pbox>(); 
-
+                loadedthread = lthread.ToList<_Pbox>();
+                checker++;
             }
             else
             {
                 loadedthread = new List<_Pbox>();
+                checker++;
             }
             InitializeComponent();
 
@@ -758,7 +759,7 @@ Color.FromArgb(255, 152, 152, 255));
             {
 
                 if (IconDirectory.Equals(string.Empty)) IconDirectory = $"{Directory.GetCurrentDirectory()}\\{loadedthread[0].Board}";
-                else IconDirectory = $"{IconDirectory}\\{loadedthread[0].Board}";
+                else IconDirectory = $"{IconDirectory}";
 
                // Directory.CreateDirectory(IconDirectory);
                 var files = Directory.GetFiles(IconDirectory);
