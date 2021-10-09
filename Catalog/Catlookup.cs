@@ -257,7 +257,8 @@ namespace Catalog
                 }
                 Console.WriteLine("parse checkpoint 3");
 
-                   SortedDisplayList = replysort(postarray, replytree);
+     //              SortedDisplayList = replysort(postarray, replytree);
+                SortedDisplayList = Sortbyweight(postarray, replytree);
                // SortedDisplayList = postarray;
               
             DisplayThread finishedThread = new DisplayThread(OPpostID, boardfabric.Board, SortedDisplayList, OPSub, boardfabric.LThreads[i].Weight);
@@ -371,115 +372,6 @@ namespace Catalog
             return System.Console.ReadLine();
         }
 
-        public static Shell32.Folder GetShell32NameSpaceFolder(Object folder)
-        {
-            Type shellAppType = Type.GetTypeFromProgID("Shell.Application");
-
-            Object shell = Activator.CreateInstance(shellAppType);
-            return (Shell32.Folder)shellAppType.InvokeMember("NameSpace",
-          System.Reflection.BindingFlags.InvokeMethod, null, shell, new object[] { folder });
-        }
-
-        public static string GetExtendedFileProperty(string filePath, string propertyName)
-        {
-            string value = string.Empty;
-            string baseFolder = Path.GetDirectoryName(filePath);
-            string fileName = Path.GetFileName(filePath);
-
-            //Method to load and execute the Shell object for Windows server 8 environment otherwise you get "Unable to cast COM object of type 'System.__ComObject' to interface type 'Shell32.Shell'"
-            Type shellAppType = Type.GetTypeFromProgID("Shell.Application");
-            Object shell = Activator.CreateInstance(shellAppType);
-            Shell32.Folder shellFolder = (Shell32.Folder)shellAppType.InvokeMember("NameSpace", System.Reflection.BindingFlags.InvokeMethod, null, shell, new object[] { baseFolder });
-
-            //Parsename will find the specific file I'm looking for in the Shell32.Folder object
-            Shell32.FolderItem folderitem = shellFolder.ParseName(fileName);
-            if (folderitem != null)
-            {
-                for (int i = 0; i < short.MaxValue; i++)
-                {
-                    //Get the property name for property index i
-                    string property = shellFolder.GetDetailsOf(null, i);
-
-                    //Will be empty when all possible properties has been looped through, break out of loop
-                    if (String.IsNullOrEmpty(property)) break;
-
-                    //Skip to next property if this is not the specified property
-                    if (property != propertyName) continue;
-
-                    //Read value of property
-                    value = shellFolder.GetDetailsOf(folderitem, i);
-                }
-            }
-            //returns string.Empty if no value was found for the specified property
-            return value;
-        }
-
-
-        public static Tree repliesnew(string postContent, Tree replytree, int postID)
-        {
-            Console.WriteLine(postContent + " content");
-            //IDictionary<int,int> postreplies = new IDictionary<int,int>();
-         //   replytree.addNode(postID);
-
-            //  Regex IDfind = new Regex();
-
-            if (postContent.Contains(">>") && postContent.Contains(" "))
-            {
-                int Start, End;
-                int data = 1;
-                string datacheck = "";
-                int lastreply = 1;
-                bool crossthread = false;
-                Start = postContent.IndexOf(">>", 0) + 2;
-
-
-                do
-                {
-                    End = postContent.IndexOf(" ", Start);
-                    datacheck = postContent.Substring(Start, End - Start);
-
-                    if (datacheck.IndexOf(">") != -1)
-                    {
-                        Console.WriteLine("crossthread detected");
-                        crossthread = true;
-
-                    }
-                    data = Int32.Parse(postContent.Substring(Start, End - Start));
-                    Console.WriteLine(data + " data");
-
-
-
-
-                    if (replytree.getNode(data) == null && data != 0) //new unique reply
-                    {
-                        Node newroot = new Node();
-                        newroot.id = data;
-                       // newroot.a(data);
-                        replytree.addRoot(newroot);
-                        lastreply = data;
-
-                    }
-                    else if (replytree.getNode(data) != null && data != lastreply) //parent node contained in tree already
-                    {
-                        Node newnode = new Node();
-                        newnode.id = data;
-                        newnode.addParent(data);
-                        replytree.addNode(newnode);
-                        lastreply = data;
-                    }
-
-                    Start = postContent.IndexOf(">>", End) + 2;
-                    crossthread = false;
-
-                }
-                while (Start != 1);
-
-               //  return replytree;
-            }
-       //     replytree.addNode(postID); //end amend
-            return replytree;
-        }
-
         public static Tree replies(string postContent, Tree replytree, int postID, int postW)
         {
             string pattern = "(?<=>>)(((?<!>>>)[0-9]))+";
@@ -573,53 +465,71 @@ namespace Catalog
             List<Dictionary<int, int>> paths = new List<Dictionary<int, int>>();
 
 
-            foreach (_Pbox upost in unsorted)
+            foreach (Node Root in replytree.getRoots()) //for each original root post
             {
+                List<Dictionary<int, int>> pathwaylist = new List<Dictionary<int, int>>(); //this nodes combined pathway dict
 
 
-                if (upost.ReplyDepth == 0) //if post is original root post
-                {
-
-                    if (replytree.getNode(upost.PostID) == null) //replytree id is null
-                    {
-
-                    }
-                    else
-                    {
-                        Node currentnode = replytree.getNode(upost.PostID); //reply tree node is ok
-                        paths = NodePaths(currentnode,replytree);
-
-                    }
+                List<Dictionary<int, int>> pathwaysfromroot = NodePaths(Root, replytree, pathwaylist, null); //grab all pathways in list
 
 
-                }
-                else //if the post is a reply
-                {
-
-                }
+                //ratio each pathway and keep top 3
+               // List<Dictionary<int,int>> ratioedpaths = RatioMethod(pathwaysfromroot);
+              //  SortedPosts = PathsToBox(ratioedpaths);
 
             }
 
-
+            return SortedPosts;
 
         }
-        public static List<Dictionary<int,int>> NodePaths(Node cnode, Tree replytree)
+        public static List<Dictionary<int, int>> NodePaths(Node cnode, Tree replytree, List<Dictionary<int, int>> pathwaylist, Dictionary<int, int> RP)
         {
             Dictionary<int, int> rollingpath = new Dictionary<int, int>();
 
-            List<Node> kids = cnode.getchildren();
-
-            rollingpath.Add(cnode.id, cnode.replyweight);// first reply in chains,
-
-            foreach (Node child in kids)
+            if(RP != null)
             {
+                rollingpath = RP;
+            }
 
+
+            List<Node> kids = cnode.getchildren();
+            if (rollingpath.ContainsKey(cnode.id))
+            {
+                //node already exists in pathway, cycle detected
+
+                pathwaylist.Add(rollingpath); //add completed path to pathlist
 
 
             }
-            
+            else
+            {
+
+            rollingpath.Add(cnode.id, cnode.replyweight);// add parent node to pathway
+
+            }
+
+
+
+            if(cnode.getchildren().Equals(new List<Node>()) == true) // get children returns an empty list c0 termination
+            {
+                pathwaylist.Add(rollingpath); //add completed path to pathlist
+            }
+
+            foreach (Node child in kids) // create cN new dictonary paths
+            {
+                pathwaylist = NodePaths(child, replytree, pathwaylist, rollingpath);
+
+
+            }
+
+            return pathwaylist;
 
         }
+
+
+
+
+
         public static List<_Pbox> childloop(int post, Tree replytree, List<_Pbox> SortedPosts, List<_Pbox> UnsortedPosts)
         {
 
@@ -1170,6 +1080,15 @@ namespace Catalog
             this.roots.Add(node);
             node.tree = this;
         }
+        public List<Node> getRoots()
+        {
+            if(roots != null)
+            {
+                return roots;
+            }
+            return null;
+        }
+
 
     }
 
