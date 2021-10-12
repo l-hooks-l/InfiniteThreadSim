@@ -26,6 +26,7 @@ namespace Catalog
         private static string notags = "";    //undefined name for images without image partner
         private static string imagepath = @"C:\Users\Nathan\Pictures\Icons"; //folder tagged images hangout in
         public static int ichecker = 0;
+        public static int perpostweightthresh = 50;
 
        // public static  Shell32.Shell shell = new Shell32.Shell();
        // public static Shell32.Folder objFolder;
@@ -468,24 +469,111 @@ namespace Catalog
             foreach (Node Root in replytree.getRoots()) //for each original root post
             {
                 List<Dictionary<int, int>> pathwaylist = new List<Dictionary<int, int>>(); //this nodes combined pathway dict
+                Dictionary<int, int> cpath = new Dictionary<int, int>();
 
+                List<Dictionary<int, int>> pathwaysfromroot = ContPath(Root, replytree, pathwaylist, cpath); //grab all pathways in list
 
-                List<Dictionary<int, int>> pathwaysfromroot = NodePaths(Root, replytree, pathwaylist, null); //grab all pathways in list
 
 
                 //ratio each pathway and keep top 3
-               // List<Dictionary<int,int>> ratioedpaths = RatioMethod(pathwaysfromroot);
-              //  SortedPosts = PathsToBox(ratioedpaths);
+               List<Dictionary<int,int>> ratioedpaths = RatioMethod(pathwaysfromroot);
+                SortedPosts = PathstoBox(ratioedpaths,unsorted);
 
             }
 
             return SortedPosts;
 
         }
+        public static List<_Pbox> PathstoBox(List<Dictionary<int,int>> toppaths, List<_Pbox> unsorted)
+        {
+            Dictionary<int, bool> visitedposts = new Dictionary<int, bool>();
+            List<_Pbox> sortedarray = new List<_Pbox>();
+            foreach(Dictionary<int,int> pathway in toppaths)
+            {
+                int cache = 0;
+                 foreach (KeyValuePair<int,int> entry in pathway)
+                 {
+                    int id = 0; //indicates how many posts down the path we are
+
+
+                    if(visitedposts.ContainsKey(entry.Key)) // post has already been added to array
+                    {
+                        if(id == 0) //added and first disregard
+                        {
+
+
+
+                        }
+                        else //added and in trasit do nothing
+                        {
+
+                        }
+
+
+                    }
+                    else //the post has not been added to array
+                    {
+                        if(id == 0) //first node in path  no cache yet n1
+                        {
+                            visitedposts.Add(entry.Key,true);
+
+                            _Pbox tempbox = unsorted.Find(x => x.PostID == entry.Key);
+
+                            _Pbox submitbox = new _Pbox(tempbox.Data,tempbox.SpokenData,tempbox.PostID,tempbox.Unix,new PointF(0,0), new PointF(0, 0),tempbox.ReplyDepth,tempbox.hasExt,tempbox.Imagepath, tempbox.Weight,tempbox.Board);
+
+                            sortedarray.Add(submitbox);
+
+
+                        }
+                        else //new node add current and edited cache node
+                        {
+
+                           visitedposts.Add(entry.Key, true);
+
+
+                            _Pbox tempbox = unsorted.Find(x => x.PostID == cache);
+
+                            _Pbox submitbox = new _Pbox(tempbox.Data, " " , tempbox.PostID, tempbox.Unix, new PointF(0, 0), new PointF(0, 0), tempbox.ReplyDepth, tempbox.hasExt, tempbox.Imagepath, tempbox.Weight, tempbox.Board);
+
+                            sortedarray.Add(submitbox);
+
+
+
+                            _Pbox tempbox2 = unsorted.Find(x => x.PostID == entry.Key);
+
+                           _Pbox submitbox2 = new _Pbox(tempbox2.Data, tempbox2.SpokenData, tempbox2.PostID, tempbox2.Unix, new PointF(0, 0), new PointF(0, 0), tempbox2.ReplyDepth, tempbox2.hasExt, tempbox2.Imagepath, tempbox2.Weight, tempbox2.Board);
+
+                           sortedarray.Add(submitbox2);
+
+                        }
+                    }
+
+                    //add this post to cache for next post
+                    cache = entry.Key;
+
+                    id++;
+                 }
+            }
+            return sortedarray;
+            //iterate through paths
+
+            //add elements of path to Pbox array, add to visited lookup
+
+            //if current node has been added and its the first, just ignore
+
+            //if current node has been added and its not first on list, store in buffer, dont add to p array
+
+            //if current node is not added, and is not first on the list, add buffer post without spoken text, then current post
+
+            //if current node is not added, and it is the first on the list, add current node to p array contunie
+
+
+        }
+
         public static List<Dictionary<int, int>> NodePaths(Node cnode, Tree replytree, List<Dictionary<int, int>> pathwaylist, Dictionary<int, int> RP)
         {
             Dictionary<int, int> rollingpath = new Dictionary<int, int>();
-
+            Dictionary<int, int> mempath = null;
             if(RP != null)
             {
                 rollingpath = RP;
@@ -497,8 +585,8 @@ namespace Catalog
             {
                 //node already exists in pathway, cycle detected
 
-                pathwaylist.Add(rollingpath); //add completed path to pathlist
-
+//                pathwaylist.Add(rollingpath); //add completed path to pathlist
+                rollingpath.Clear();
 
             }
             else
@@ -510,13 +598,27 @@ namespace Catalog
 
 
 
-            if(cnode.getchildren().Equals(new List<Node>()) == true) // get children returns an empty list c0 termination
+            if(cnode.getchildren().Count() == 0) // get children returns an empty list c0 termination
             {
-                pathwaylist.Add(rollingpath); //add completed path to pathlist
+                pathwaylist.Add(new Dictionary<int,int>(rollingpath)); //add completed path to pathlist
+              //  rollingpath.Clear();
+                if(mempath != null)
+                {
+                rollingpath = mempath;
+                }
+
+
+            }
+            else //if there are children
+            {
+                mempath = rollingpath;
             }
 
+         //       pathwaylist.Add(new Dictionary<int, int>(rollingpath));
             foreach (Node child in kids) // create cN new dictonary paths
             {
+
+
                 pathwaylist = NodePaths(child, replytree, pathwaylist, rollingpath);
 
 
@@ -527,8 +629,91 @@ namespace Catalog
         }
 
 
+        public static List<Dictionary<int,int>> ContPath(Node cnode, Tree replytree, List<Dictionary<int, int>> pathwaymapreturn,Dictionary<int,int> currentpath)
+        {
+            if(currentpath.ContainsKey(cnode.id))
+            {
+                //cycle detected break path
+                pathwaymapreturn.Add(new Dictionary<int, int>(currentpath));
+                return pathwaymapreturn;
+
+            }
 
 
+            currentpath.Add(cnode.id, cnode.replyweight);// adds this node to the current path
+
+            List<Node> kids = cnode.getchildren();
+
+            if (kids.Count() == 0) // get children returns an empty list c0 termination
+            {
+
+                pathwaymapreturn.Add(new Dictionary<int,int>(currentpath));
+                return pathwaymapreturn;
+            }
+            else if (kids.Count == 1) //c1
+            {
+                foreach (Node kid in kids)
+                {
+                    pathwaymapreturn = ContPath(kid, replytree, pathwaymapreturn, currentpath);
+                    return pathwaymapreturn;
+                }
+
+
+            }
+
+            //cn fork off from current path
+            var fork = new Dictionary<int, int>(currentpath);
+            foreach(Node kid in kids)
+            {
+
+                pathwaymapreturn = ContPath(kid, replytree, pathwaymapreturn, fork);
+
+            }
+
+            return pathwaymapreturn;
+
+        }
+
+        public static List<Dictionary<int, int>> RatioMethod( List<Dictionary<int, int>> bestpaths)
+        {
+            List<Dictionary<Dictionary<int, int>, float>> unsortedpaths = new List<Dictionary<Dictionary<int, int>, float>>();
+            SortedDictionary<int, float> temp = new SortedDictionary<int, float>();
+            int pathid = 0;
+            foreach(Dictionary<int,int> path in bestpaths) //for each path
+            {
+                var totalweight = 0;
+
+                foreach(KeyValuePair<int,int> kvp in path) //add all weights vs dictory length
+                {
+                    totalweight += kvp.Value;
+
+                }
+                var length = path.Count();
+                var totalheft = length * perpostweightthresh;
+
+                float ratio = (float) totalweight /(totalheft + length) ;
+                
+               // SortedDictionary<int, float> temp = new SortedDictionary<int, float>();
+
+
+                temp.Add(pathid, ratio);
+                pathid++;
+
+            }
+            List<Dictionary<int, int>> top3 = new List<Dictionary<int, int>>();
+
+            var presort = temp.OrderByDescending(x => x.Value).ToList();
+            //var presort = from entry in unsortedpaths orderby entry.Values ascending select entry.;
+           //var presort = unsortedpaths.OrderByDescending(x => x.Values);
+
+            for(int i = 0; i < 3;i++)
+            {
+                top3.Add(bestpaths[presort[i].Key]);
+            }
+
+
+            return top3;
+        }
 
         public static List<_Pbox> childloop(int post, Tree replytree, List<_Pbox> SortedPosts, List<_Pbox> UnsortedPosts)
         {
