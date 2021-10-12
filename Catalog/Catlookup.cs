@@ -464,7 +464,7 @@ namespace Catalog
         {
             List<_Pbox> SortedPosts = new List<_Pbox>();
             List<Dictionary<int, int>> paths = new List<Dictionary<int, int>>();
-
+           // List<Dictionary<int, int>> ratioedpaths = new List<Dictionary<int, int>>();
 
             foreach (Node Root in replytree.getRoots()) //for each original root post
             {
@@ -476,11 +476,12 @@ namespace Catalog
 
 
                 //ratio each pathway and keep top 3
-               List<Dictionary<int,int>> ratioedpaths = RatioMethod(pathwaysfromroot);
-                SortedPosts = PathstoBox(ratioedpaths,unsorted);
+                List<Dictionary<int, int>> ratioedpaths = RatioMethod(pathwaysfromroot);
+                SortedPosts = PathstoBox(ratioedpaths,unsorted); 
 
             }
 
+           
             return SortedPosts;
 
         }
@@ -519,9 +520,15 @@ namespace Catalog
 
                             _Pbox tempbox = unsorted.Find(x => x.PostID == entry.Key);
 
+                            if(tempbox != null)
+                            {
                             _Pbox submitbox = new _Pbox(tempbox.Data,tempbox.SpokenData,tempbox.PostID,tempbox.Unix,new PointF(0,0), new PointF(0, 0),tempbox.ReplyDepth,tempbox.hasExt,tempbox.Imagepath, tempbox.Weight,tempbox.Board);
 
                             sortedarray.Add(submitbox);
+
+
+                            }
+
 
 
                         }
@@ -704,12 +711,31 @@ namespace Catalog
 
             var presort = temp.OrderByDescending(x => x.Value).ToList();
             //var presort = from entry in unsortedpaths orderby entry.Values ascending select entry.;
-           //var presort = unsortedpaths.OrderByDescending(x => x.Values);
+            //var presort = unsortedpaths.OrderByDescending(x => x.Values);
+            var count = presort.Count();
 
-            for(int i = 0; i < 3;i++)
+            if (count > 3)
             {
+                for(int i = 0; i < 3;i++)
+                {
+
                 top3.Add(bestpaths[presort[i].Key]);
+
+                }
             }
+            else
+            {
+
+                for(int i = 0; i < count;i++)
+                {
+
+                    top3.Add(bestpaths[presort[i].Key]);
+
+                }
+
+            }
+
+          
 
 
             return top3;
