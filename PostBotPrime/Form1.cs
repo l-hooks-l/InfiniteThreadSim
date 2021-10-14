@@ -51,6 +51,8 @@ namespace PostBotPrime
 
         Dictionary<string,SpeechSynthesizer> loadedvoices = new Dictionary<string,SpeechSynthesizer>();
         SpeechSynthesizer activevoice = new SpeechSynthesizer();
+        public static Dictionary<string, Image> loadedimages = new Dictionary<string, Image>();
+
         Image IconImage;
         float ScrollCord = 0.00f;
         int ScrollingMulti = 1;
@@ -214,6 +216,8 @@ Color.FromArgb(255, 152, 152, 255));
             {
                 ThreadPoints = GrabThreadPoints(loadedthread, e); // create threadpaoint array
 
+                loadedimages = GrabImages(loadedthread);
+
                 Rectangle rect = new Rectangle(0,0,panel1.Width,panel1.Height);
                 Region bounds = new Region(rect);
                 g.Clip = bounds;
@@ -259,6 +263,36 @@ Color.FromArgb(255, 152, 152, 255));
 
             loaded = true;
 
+        }
+
+        private Dictionary<string, Image> GrabImages(List<_Pbox> loadedthread)
+        {
+            Dictionary<string, Image> imgbank = new Dictionary<string, Image>();
+            BinaryFormatter formatter = new BinaryFormatter();            
+            foreach(_Pbox post in loadedthread)
+            {
+               if(post.hasExt != true) //post has no extension
+                {
+                    continue;
+                }
+
+                FileStream Imagestream = File.OpenRead(post.Imagepath);
+                Image image = Image.FromStream(Imagestream);
+
+                if(imgbank.ContainsKey(post.Imagepath))  //image already added
+                {
+                    continue;
+                }
+                else
+                {
+                    imgbank.Add(post.Imagepath,image);
+                }
+
+
+            }
+
+            return imgbank;
+            
         }
 
         private Dictionary<int, float> GrabThreadPoints(List<_Pbox> loadedthread, PaintEventArgs e)
@@ -445,8 +479,12 @@ Color.FromArgb(255, 152, 152, 255));
             e.Graphics.FillRectangle(Van2brush, PostOrigin.X, PostOrigin.Y, PostSize.Width, PostSize.Height);
             e.Graphics.DrawRectangle(mypen, PostOrigin.X, PostOrigin.Y, PostSize.Width, PostSize.Height);
 
-            e.Graphics.DrawRectangle(mypen, ImageOrigin.X, ImageOrigin.Y, ImageSize.Width, ImageSize.Height);
-            
+            e.Graphics.DrawRectangle(mypen, ImageOrigin.X, ImageOrigin.Y, ImageSize.Width, ImageSize.Height); //post image bounding box
+            if(Post.hasExt)
+            {
+            e.Graphics.DrawImage(loadedimages[Post.Imagepath] ,ImageOrigin.X, ImageOrigin.Y, ImageSize.Width, ImageSize.Height);
+            }
+
 
 
             //g.DrawRectangle(mypen, TextOrigin.X, TextOrigin.Y, TextSize.Width, TextSize.Height);

@@ -28,7 +28,7 @@ namespace Catalog
         public static int ichecker = 0;
         public static int perpostweightthresh = 50;
         public static List<SpeechSynthesizer> loadedvoices = new List<SpeechSynthesizer>();
-
+        public static Dictionary<string, Image> loadedimages = new Dictionary<string, Image>();
        // public static  Shell32.Shell shell = new Shell32.Shell();
        // public static Shell32.Folder objFolder;
 
@@ -239,7 +239,7 @@ namespace Catalog
                     //walk current posts weight down reply tree from child to root
                     string voice = postvoice(loadedvoices);
                     _Pbox postbox = new _Pbox(pureCOM,SpokenCom, postID, postUnix, new PointF(0, 0), new PointF(0, 0), 0, postImage,imgtag,postweight,boardfabric.Board,voice); //idividual post box 
-                    postbox.setvoice(voice);
+                    //postbox.setvoice(voice);
                     // ichecker++;
                     Console.WriteLine("replydepth start");
                     var depth = replydepth(postbox, replytree);
