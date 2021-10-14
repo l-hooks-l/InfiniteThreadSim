@@ -10,7 +10,7 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.Runtime.Serialization.Formatters.Binary;
 using static PostBotPrime.Form1;
-using Shell32;
+using System.Speech.Synthesis;
 
 namespace Catalog
 {
@@ -27,6 +27,7 @@ namespace Catalog
         private static string imagepath = @"C:\Users\Nathan\Pictures\Icons"; //folder tagged images hangout in
         public static int ichecker = 0;
         public static int perpostweightthresh = 50;
+        public static List<SpeechSynthesizer> loadedvoices = new List<SpeechSynthesizer>();
 
        // public static  Shell32.Shell shell = new Shell32.Shell();
        // public static Shell32.Folder objFolder;
@@ -105,7 +106,9 @@ namespace Catalog
             Dictionary<string, int> threadbank = wordBankCompiler2(boardfabric.Board);
             Dictionary<string, string> keybank = imgtagCompiler();
             List<DisplayThread> finishedThreads = new List<DisplayThread>();
-           // objFolder = GetShell32NameSpaceFolder(imagepath);
+            List<string> loadedvoices = new List<string>();
+            loadedvoices = BuildVoiceList();
+           // objFolder = GShell32NameSpaceFolder(imagepath);
            // objFolder = shell.NameSpace(imagepath);
 
             Console.WriteLine("parse checkpoint 1");
@@ -191,7 +194,7 @@ namespace Catalog
                                 var htmlparsed = htmldoc.DocumentNode.InnerText;
                                 pureCOM = WebUtility.HtmlDecode(htmlparsed);
                                 Console.WriteLine("textparse start");
-                               // SpokenCom = SpokenFix(pureCOM);
+                                SpokenCom = SpokenFix(pureCOM);
                                 Console.WriteLine("textparse finished");
                             }
 
@@ -234,9 +237,10 @@ namespace Catalog
 
 
                     //walk current posts weight down reply tree from child to root
-
-                    _Pbox postbox = new _Pbox(pureCOM,SpokenCom, postID, postUnix, new PointF(0, 0), new PointF(0, 0), 0, postImage,imgtag,postweight,boardfabric.Board); //idividual post box 
-                                                                                                                                                                          // ichecker++;
+                    string voice = postvoice(loadedvoices);
+                    _Pbox postbox = new _Pbox(pureCOM,SpokenCom, postID, postUnix, new PointF(0, 0), new PointF(0, 0), 0, postImage,imgtag,postweight,boardfabric.Board,voice); //idividual post box 
+                    postbox.setvoice(voice);
+                    // ichecker++;
                     Console.WriteLine("replydepth start");
                     var depth = replydepth(postbox, replytree);
                     Console.WriteLine("replydepth finish");
@@ -464,7 +468,7 @@ namespace Catalog
         {
             List<_Pbox> SortedPosts = new List<_Pbox>();
             List<Dictionary<int, int>> paths = new List<Dictionary<int, int>>();
-           // List<Dictionary<int, int>> ratioedpaths = new List<Dictionary<int, int>>();
+            List<Dictionary<int, int>> ratioedpaths = new List<Dictionary<int, int>>();
 
             foreach (Node Root in replytree.getRoots()) //for each original root post
             {
@@ -476,12 +480,17 @@ namespace Catalog
 
 
                 //ratio each pathway and keep top 3
-                List<Dictionary<int, int>> ratioedpaths = RatioMethod(pathwaysfromroot);
-                SortedPosts = PathstoBox(ratioedpaths,unsorted); 
+                var temp = RatioMethod(pathwaysfromroot);
+                foreach(Dictionary<int,int> dict in temp)
+                {
+                    paths.Add(dict);
+                }
+
 
             }
 
-           
+
+             SortedPosts = PathstoBox(paths,unsorted);          
             return SortedPosts;
 
         }
@@ -492,9 +501,11 @@ namespace Catalog
             foreach(Dictionary<int,int> pathway in toppaths)
             {
                 int cache = 0;
+                int idatcache = 0;
+                    int id = 0; //indicates how many posts down the path we are
                  foreach (KeyValuePair<int,int> entry in pathway)
                  {
-                    int id = 0; //indicates how many posts down the path we are
+
 
 
                     if(visitedposts.ContainsKey(entry.Key)) // post has already been added to array
@@ -520,9 +531,9 @@ namespace Catalog
 
                             _Pbox tempbox = unsorted.Find(x => x.PostID == entry.Key);
 
-                            if(tempbox != null)
+                            if(tempbox != null) // post was probably culled earlier
                             {
-                            _Pbox submitbox = new _Pbox(tempbox.Data,tempbox.SpokenData,tempbox.PostID,tempbox.Unix,new PointF(0,0), new PointF(0, 0),tempbox.ReplyDepth,tempbox.hasExt,tempbox.Imagepath, tempbox.Weight,tempbox.Board);
+                            _Pbox submitbox = new _Pbox(tempbox.Data,tempbox.SpokenData,tempbox.PostID,tempbox.Unix,new PointF(0,0), new PointF(0, 0),tempbox.ReplyDepth,tempbox.hasExt,tempbox.Imagepath, tempbox.Weight,tempbox.Board,tempbox.voicesetting);
 
                             sortedarray.Add(submitbox);
 
@@ -537,27 +548,39 @@ namespace Catalog
 
                            visitedposts.Add(entry.Key, true);
 
-
+                            if((id - idatcache) >1)
+                            
+                            {
                             _Pbox tempbox = unsorted.Find(x => x.PostID == cache);
 
-                            _Pbox submitbox = new _Pbox(tempbox.Data, " " , tempbox.PostID, tempbox.Unix, new PointF(0, 0), new PointF(0, 0), tempbox.ReplyDepth, tempbox.hasExt, tempbox.Imagepath, tempbox.Weight, tempbox.Board);
+                            if (tempbox != null) // post was probably culled earlier
+                            {
+                                _Pbox submitbox = new _Pbox(tempbox.Data, "", tempbox.PostID, tempbox.Unix, new PointF(0, 0), new PointF(0, 0), tempbox.ReplyDepth, tempbox.hasExt, tempbox.Imagepath, tempbox.Weight, tempbox.Board,tempbox.voicesetting);
 
-                            sortedarray.Add(submitbox);
+                                sortedarray.Add(submitbox);
+
+
+                            }
+                            }
 
 
 
                             _Pbox tempbox2 = unsorted.Find(x => x.PostID == entry.Key);
 
-                           _Pbox submitbox2 = new _Pbox(tempbox2.Data, tempbox2.SpokenData, tempbox2.PostID, tempbox2.Unix, new PointF(0, 0), new PointF(0, 0), tempbox2.ReplyDepth, tempbox2.hasExt, tempbox2.Imagepath, tempbox2.Weight, tempbox2.Board);
+                            if (tempbox2 != null) // post was probably culled earlier
+                            {
+                                _Pbox submitbox2 = new _Pbox(tempbox2.Data, tempbox2.SpokenData, tempbox2.PostID, tempbox2.Unix, new PointF(0, 0), new PointF(0, 0), tempbox2.ReplyDepth, tempbox2.hasExt, tempbox2.Imagepath, tempbox2.Weight, tempbox2.Board,tempbox2.voicesetting);
 
                            sortedarray.Add(submitbox2);
+                            }
+
 
                         }
                     }
 
                     //add this post to cache for next post
                     cache = entry.Key;
-
+                    idatcache = id;
                     id++;
                  }
             }
@@ -681,7 +704,7 @@ namespace Catalog
 
         }
 
-        public static List<Dictionary<int, int>> RatioMethod( List<Dictionary<int, int>> bestpaths)
+        public static List<Dictionary<int, int>> RatioMethod( List<Dictionary<int, int>> bestpaths) //takes all pathways, returns top 3
         {
             List<Dictionary<Dictionary<int, int>, float>> unsortedpaths = new List<Dictionary<Dictionary<int, int>, float>>();
             SortedDictionary<int, float> temp = new SortedDictionary<int, float>();
@@ -1128,6 +1151,60 @@ namespace Catalog
             Directory.CreateDirectory($"{imagepath}\\verified");
 
             return TD;
+
+
+
+        }
+
+        public static string postvoice(List<string> loadedvoices)
+        {
+            if(loadedvoices.Count > 0)
+            {
+            Random rng = new Random();
+            var voiceint = rng.Next(0, loadedvoices.Count);
+
+            string voice = loadedvoices[voiceint];
+            return voice;
+            }
+            return "no loaded voices";
+        }
+        public static List<string> BuildVoiceList()
+        {
+            List<string> voices = new List<string>();
+
+            /*
+
+            SpeechSynthesizer Male1 = new SpeechSynthesizer();
+            SpeechSynthesizer Male2 = new SpeechSynthesizer();
+            SpeechSynthesizer Male3 = new SpeechSynthesizer();
+            SpeechSynthesizer Female1 = new SpeechSynthesizer();
+            SpeechSynthesizer Female2 = new SpeechSynthesizer();
+            SpeechSynthesizer Female3 = new SpeechSynthesizer();
+            SpeechSynthesizer special1 = new SpeechSynthesizer();
+            SpeechSynthesizer special2 = new SpeechSynthesizer();
+            
+
+            Male1.SelectVoiceByHints(VoiceGender.Male,VoiceAge.Adult);
+            Male2.SelectVoiceByHints(VoiceGender.Male, VoiceAge.Teen);
+            Male3.SelectVoiceByHints(VoiceGender.Male, VoiceAge.Senior);
+            Female1.SelectVoiceByHints(VoiceGender.Female, VoiceAge.Adult);
+            Female2.SelectVoiceByHints(VoiceGender.Female, VoiceAge.Teen);
+            Female3.SelectVoiceByHints(VoiceGender.Female, VoiceAge.Senior);
+            special1.SelectVoiceByHints(VoiceGender.Neutral, VoiceAge.Child);
+            special2.SelectVoiceByHints(VoiceGender.Neutral, VoiceAge.Adult);
+            */
+            //List<SpeechSynthesizer> voices = new List<SpeechSynthesizer>();
+            voices.Add("Male1");
+            voices.Add("Male2");
+            voices.Add("Male3");
+            voices.Add("Female1");
+            voices.Add("Female2");
+            voices.Add("Female3");
+            voices.Add("Special1");
+            voices.Add("Special2");
+
+            
+            return voices;
 
 
 

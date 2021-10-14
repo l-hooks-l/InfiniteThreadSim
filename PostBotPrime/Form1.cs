@@ -17,6 +17,7 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using Newtonsoft.Json;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.Serialization;
 
 namespace PostBotPrime
 {
@@ -25,7 +26,7 @@ namespace PostBotPrime
     {
  
 
-        public string LoadDirectory = @"C:\chanjson\x";
+        public string LoadDirectory = @"C:\chanjson\g";
         public string ImageDirectory = @"";
         public string IconDirectory = @"C:\Users\Nathan\Pictures\Icons";
         public string MusicDirectory = @"";
@@ -48,7 +49,8 @@ namespace PostBotPrime
         public Dictionary<int, float> ThreadPoints;
         public string CB = "init";
 
-        SpeechSynthesizer Voice1 = new SpeechSynthesizer();
+        Dictionary<string,SpeechSynthesizer> loadedvoices = new Dictionary<string,SpeechSynthesizer>();
+        SpeechSynthesizer activevoice = new SpeechSynthesizer();
         Image IconImage;
         float ScrollCord = 0.00f;
         int ScrollingMulti = 1;
@@ -153,7 +155,7 @@ Color.FromArgb(255, 152, 152, 255));
         }
 
         
-        [Serializable()] public class _Pbox
+        [Serializable] public class _Pbox
         {
 
             public string Data { get; private set; }
@@ -167,9 +169,10 @@ Color.FromArgb(255, 152, 152, 255));
             public string Imagepath { get; set; }
             public int Weight { get; set; }
             public string Board { get; set; }
+            public string voicesetting { get; set; }
 
             
-          public _Pbox(string Com,string spokencom, int postid, int unix, PointF draworigin, PointF endorigin, int replydepth, bool ext,string imagepath, int weight, string board)
+          public _Pbox(string Com,string spokencom, int postid, int unix, PointF draworigin, PointF endorigin, int replydepth, bool ext,string imagepath, int weight, string board,string Voice)
             {
 
                 Data = Com;
@@ -183,6 +186,19 @@ Color.FromArgb(255, 152, 152, 255));
                 Weight = weight;
                 Board = board;
                 Imagepath = imagepath;
+               voicesetting = Voice;
+            }
+            public void setvoice(string voice)
+            {
+                voicesetting = voice;
+            }
+            public string getVoice()
+            {
+                if(voicesetting != null)
+                {
+                    return voicesetting;
+                }
+                return null;
             }
  
         }
@@ -430,6 +446,7 @@ Color.FromArgb(255, 152, 152, 255));
             e.Graphics.DrawRectangle(mypen, PostOrigin.X, PostOrigin.Y, PostSize.Width, PostSize.Height);
 
             e.Graphics.DrawRectangle(mypen, ImageOrigin.X, ImageOrigin.Y, ImageSize.Width, ImageSize.Height);
+            
 
 
             //g.DrawRectangle(mypen, TextOrigin.X, TextOrigin.Y, TextSize.Width, TextSize.Height);
@@ -619,7 +636,9 @@ Color.FromArgb(255, 152, 152, 255));
                 string cimg = post.Imagepath;
                 int weight = post.Weight;
                 string board = post.Board;
-                _Pbox freshpost = new _Pbox(copieddata,cspoken,copiedid,cunix,new PointF(0,0),new PointF(0,0),copieddepth,cext,cimg,weight,board);
+                string voice = post.voicesetting;
+                _Pbox freshpost = new _Pbox(copieddata,cspoken,copiedid,cunix,new PointF(0,0),new PointF(0,0),copieddepth,cext,cimg,weight,board,voice);
+                freshpost.voicesetting = voice;
                 freshlist.Add(freshpost);
             }
 
@@ -627,19 +646,87 @@ Color.FromArgb(255, 152, 152, 255));
             return freshlist;
 
         }
+        public Dictionary<string,SpeechSynthesizer> BuildSS()
+        {
+            SpeechSynthesizer Male1 = new SpeechSynthesizer();
+            SpeechSynthesizer Male2 = new SpeechSynthesizer();
+            SpeechSynthesizer Male3 = new SpeechSynthesizer();
+            SpeechSynthesizer Female1 = new SpeechSynthesizer();
+            SpeechSynthesizer Female2 = new SpeechSynthesizer();
+            SpeechSynthesizer Female3 = new SpeechSynthesizer();
+            SpeechSynthesizer special1 = new SpeechSynthesizer();
+            SpeechSynthesizer special2 = new SpeechSynthesizer();
 
+            Male1.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);
+            Male2.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);
+            Male3.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);
+            Female1.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);
+            Female2.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);
+            Female3.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);
+            special1.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);
+            special2.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);
 
-            public void ReadNextPost(object sender, EventArgs e)
+            Male1.SelectVoiceByHints(VoiceGender.Male, VoiceAge.Adult);
+            Male2.SelectVoiceByHints(VoiceGender.Male, VoiceAge.Teen);
+            Male3.SelectVoiceByHints(VoiceGender.Male, VoiceAge.Senior);
+            Female1.SelectVoiceByHints(VoiceGender.Female, VoiceAge.Adult);
+            Female2.SelectVoiceByHints(VoiceGender.Female, VoiceAge.Teen);
+            Female3.SelectVoiceByHints(VoiceGender.Female, VoiceAge.Senior);
+            special1.SelectVoiceByHints(VoiceGender.Female, VoiceAge.Child);
+            special2.SelectVoiceByHints(VoiceGender.Female, VoiceAge.Adult);
+            Dictionary<string,SpeechSynthesizer> voices = new Dictionary<string, SpeechSynthesizer>();
+
+            voices.Add("Male1",Male1);
+            voices.Add("Male2", Male2);
+            voices.Add("Male3", Male3);
+            voices.Add("Female1", Female1);
+            voices.Add("Female2", Female2);
+            voices.Add("Female3", Female3);
+            voices.Add("Special1", special1);
+            voices.Add("Special2", special2);
+            voices.Add("default", Male1);
+            foreach(KeyValuePair<string,SpeechSynthesizer> kvp in voices)
+            {
+                kvp.Value.Rate = 7;
+                kvp.Value.SetOutputToDefaultAudioDevice() ;
+            }
+            loadedvoices = voices;
+            return voices;
+        }
+        public SpeechSynthesizer GetSynth(string voice,Dictionary<string,SpeechSynthesizer> loadedvoicelist)
         {
 
-            
+            if(loadedvoicelist.ContainsKey(voice))
+            {
+                return loadedvoicelist[voice];
+            }
+            else
+            {
+                SpeechSynthesizer defaultvoice = new SpeechSynthesizer();
+                defaultvoice.SelectVoiceByHints(VoiceGender.Female);
+                return defaultvoice;
+            }
+        }
+
+
+        public void ReadNextPost(object sender, EventArgs e)
+        {
+
+            // SpeechSynthesizer ActiveVoice = GetSynth(loadedthread[p].getVoice(),loadedvoices);
+            string voice = loadedthread[p].voicesetting;
+
+            SpeechSynthesizer temps = GetSynth(voice,loadedvoices);
+            activevoice.SelectVoiceByHints(temps.Voice.Gender, temps.Voice.Age);
+
+
+           // activevoice = GetSynth(voice, loadedvoices);
             if (p < loadedthread.Count) //midroll posts
             {
 
             
                 if (loadedthread[p].Data != null)
                 {
-                    Voice1.SpeakAsync(loadedthread[p].Data);
+                    activevoice.SpeakAsync(loadedthread[p].SpokenData);
                 }
 
             }
@@ -647,7 +734,7 @@ Color.FromArgb(255, 152, 152, 255));
             {
                 if(loadedthread[p] != null)
                 {
-                    Voice1.SpeakAsync(loadedthread[p].Data);
+                    activevoice.SpeakAsync(loadedthread[p].SpokenData);
                     //load new thread at this point
                 }
             }
@@ -664,15 +751,18 @@ Color.FromArgb(255, 152, 152, 255));
             }
  p++;
             panel1.Invalidate();
-           
+
         }
 
        private void Form1_Load(object sender, EventArgs e)
         {
-           // SpeechSynthesizer Voice1 = new SpeechSynthesizer();
-            Voice1.SetOutputToDefaultAudioDevice();
-            Voice1.SelectVoiceByHints(VoiceGender.Male);
-            Voice1.Rate = 4;
+            // SpeechSynthesizer Voice1 = new SpeechSynthesizer();
+            BuildSS();
+
+            activevoice = GetSynth(loadedthread[p].voicesetting, loadedvoices);
+            activevoice.SetOutputToDefaultAudioDevice();
+         //  activevoice.SelectVoiceByHints(VoiceGender.Male);
+            //activevoice.Rate = 4;
             // _Pbox[] loaderposts = new _Pbox[] { testbox, testbox2, testbox3, testbox4, testbox5 };
             LOWbumper = p - LOWThresh;
             if (LOWbumper < 0)
@@ -686,8 +776,8 @@ Color.FromArgb(255, 152, 152, 255));
             }
 
             //start first post, then event
-            Voice1.SpeakAsync("");
-            Voice1.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);
+            activevoice.SpeakAsync("");
+        //    activevoice.SpeakCompleted += new EventHandler<SpeakCompletedEventArgs>(ReadNextPost);
 
 
         }
@@ -763,7 +853,7 @@ Color.FromArgb(255, 152, 152, 255));
 
                 if (IconDirectory.Equals(string.Empty)) IconDirectory = $"{Directory.GetCurrentDirectory()}\\{loadedthread[0].Board}";
                 else IconDirectory = $"{IconDirectory}";
-
+               
                // Directory.CreateDirectory(IconDirectory);
                 var files = Directory.GetFiles(IconDirectory);
 
