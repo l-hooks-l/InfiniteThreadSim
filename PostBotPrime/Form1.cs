@@ -26,11 +26,12 @@ namespace PostBotPrime
     {
  
 
-        public string LoadDirectory = @"C:\chanjson\g";
+        public string LoadDirectory = @"C:\chanjson";
         public string ImageDirectory = @"";
         public string IconDirectory = @"C:\Users\Nathan\Pictures\Icons";
         public string MusicDirectory = @"";
 
+        public int Mode = 0; //default loading mode, 0 custom playlist/ 1 top weights/ 2 pre decided playlist directory at random
 
         //class declares
         bool Scrolling = false;
@@ -101,24 +102,9 @@ Color.FromArgb(255, 152, 152, 255));
 
         public Form1()
         {
-            
 
-            var files = Directory.GetFiles(LoadDirectory);
-            
-            if (files.Length != 0)
-            {
-               List<_Pbox> lthread = Loadfile(files[f]);
-              //  var loadedt = lthread.ToArray();
-               // loadedthread = loadedt.ToList<_Pbox>();
-
-                loadedthread = lthread.ToList<_Pbox>();
-                checker++;
-            }
-            else
-            {
-                loadedthread = new List<_Pbox>();
-                checker++;
-            }
+            loadedthread = LoadNewThread();
+          
             InitializeComponent();
 
 
@@ -232,8 +218,26 @@ Color.FromArgb(255, 152, 152, 255));
 
             g.FillRectangle(BGbrush, bg);
 
-            // if p is greater then loadedposts.count load up next thread
+            if(p < 10 && frames > 5000)
+            {
+                //frames way too high for current position  --  reset
+                frames = 0;
 
+            }
+            // if p is greater then loadedposts.count load up next thread
+            if(p >= loadedthread.Count())
+            {
+                loadedthread = LoadNewThread();
+                ThreadPoints = GrabThreadPoints(loadedthread, e); // create threadpaoint array
+                Scrolling = false;
+                RollingOrigin.Y = 0;
+                frames = 0;
+                loaded = false;
+                ScrollingMulti = 1;
+                frames = 0;
+                panel1.Invalidate();
+                panel1.Refresh();
+            }
 
             if (loadedthread[p].Dorigin.Y - stopbuffer > (ScrollCord + frames)) //current post location vs scrolling cordinate 
             {
@@ -263,6 +267,77 @@ Color.FromArgb(255, 152, 152, 255));
 
             loaded = true;
 
+        }
+
+        private List<_Pbox> LoadNewThread()
+        {
+            List<_Pbox> returnlist = new List<_Pbox>();
+            switch(Mode)
+            {
+                case 0:
+                    // case 0 custom playlist
+                      Directory.CreateDirectory($"{LoadDirectory}//Defaultplaylist");
+                     var files0 = Directory.GetFiles($"{LoadDirectory}//Defaultplaylist");
+
+                    if(files0.Length == 0)
+                    {
+                        // no files in thread directory
+
+                    }
+
+                    if (f > files0.Length)
+                    {
+                        //reset f to fit new directory
+                        f = 0;
+                    }
+
+                    returnlist = Loadfile(files0[f]);
+                    f++;
+
+                    break;
+                case 1:
+                    // case 1 top playlist
+                    var files1 = Directory.GetFiles($"{LoadDirectory}//Defaultplaylist");
+                    if (files1.Length == 0)
+                    {
+                        // no files in thread directory
+
+                    }
+
+                    if (f > files1.Length)
+                    {
+                        //reset f to fit new directory
+                        f = 0;
+                    }
+
+                    returnlist = Loadfile(files1[f]);
+                    f++;
+
+                    break;
+                case 2:
+                    //case 2 predecided playlist; grab from random directory
+                    var files2 = Directory.GetFiles($"{LoadDirectory}//Defaultplaylist");
+                    if (files2.Length == 0)
+                    {
+                        // no files in thread directory
+
+                    }
+
+                    if (f > files2.Length)
+                    {
+                        //reset f to fit new directory
+                        f = 0;
+                    }
+
+                    returnlist = Loadfile(files2[f]);
+                    f++;
+                    break;
+
+            }
+            p = 0;
+            loaded = false;
+            RollingOrigin = new PointF(0, 0);
+            return returnlist;
         }
 
         private Dictionary<string, Image> GrabImages(List<_Pbox> loadedthread)
@@ -725,7 +800,7 @@ Color.FromArgb(255, 152, 152, 255));
             voices.Add("default", Male1);
             foreach(KeyValuePair<string,SpeechSynthesizer> kvp in voices)
             {
-                kvp.Value.Rate = 7;
+                kvp.Value.Rate = 10;
                 kvp.Value.SetOutputToDefaultAudioDevice() ;
             }
             loadedvoices = voices;
@@ -894,7 +969,8 @@ Color.FromArgb(255, 152, 152, 255));
                
                // Directory.CreateDirectory(IconDirectory);
                 var files = Directory.GetFiles(IconDirectory);
-
+                Random rng = new Random();
+                var c = rng.Next(0, files.Length);
 
                 if (files.Length == 0)
                 {
@@ -902,7 +978,7 @@ Color.FromArgb(255, 152, 152, 255));
                 }
                 else
                 {
-                    IconImage = Image.FromFile(files[0]);
+                    IconImage = Image.FromFile(files[c]);
                 }
 
 

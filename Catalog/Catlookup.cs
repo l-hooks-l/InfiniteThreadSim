@@ -22,6 +22,7 @@ namespace Catalog
         private const string api_url = @"https://a.4cdn.org/";
         private const string api_img_url = @"https://i.4cdn.org/";
         private static Int32 ReplyThreshold = 30;
+        public static bool downloadmode = false;
         private static string SaveDirectory = @"C:\chanjson";
         private static string notags = "";    //undefined name for images without image partner
         private static string imagepath = @"C:\Users\Nathan\Pictures\Icons"; //folder tagged images hangout in
@@ -29,6 +30,7 @@ namespace Catalog
         public static int perpostweightthresh = 50;
         public static List<SpeechSynthesizer> loadedvoices = new List<SpeechSynthesizer>();
         public static Dictionary<string, Image> loadedimages = new Dictionary<string, Image>();
+        public static int threadstoload = 1;
        // public static  Shell32.Shell shell = new Shell32.Shell();
        // public static Shell32.Folder objFolder;
 
@@ -43,6 +45,8 @@ namespace Catalog
         private static async Task Menu()
         {
             var board = GetBoard();
+            downloadmode = GetDmode();
+            threadstoload = getTload();
             ThreadList _Tlist;
             while (string.IsNullOrEmpty(board)) board = GetBoard();
 
@@ -89,6 +93,30 @@ namespace Catalog
 
             Console.WriteLine(" Threads saved to disc");
             Console.ReadLine();
+        }
+
+        private static int getTload()
+        {
+            Console.WriteLine("How many threads should we load? 1 - 10");
+            return Int32.Parse(Console.ReadLine());
+        }
+
+        private static bool GetDmode()
+        {
+            Console.WriteLine("Download unverified hashes to verification processing directory? y/n");
+           var entry = System.Console.ReadLine();
+         if (entry == "y" || entry == "Y")
+            {
+                Console.WriteLine("Download Mode: Enabled");
+
+                return true;
+            }
+         else
+            {
+                Console.WriteLine("Download Mode: Disabled");
+                return false;
+
+            }
         }
 
         public static LoomedFabric ParsePosts(_LoadedBoardFabric boardfabric) 
@@ -151,7 +179,7 @@ namespace Catalog
                     {
                         postImage = true;
                         hash = posts[d]["md5"].ToString();
-
+                        bool hashfound = false;
                         foreach (string path in Directory.GetFiles($"{imagepath}\\verified"))
                         {
 
@@ -162,6 +190,7 @@ namespace Catalog
                             if (path == imgpath)
                             {
                                 imgdefinition = imgpath;
+                                hashfound = true;
                             }
 
 
@@ -171,6 +200,11 @@ namespace Catalog
 
                             
                             
+                        }
+                        if(hashfound == false && downloadmode == true) //hash not found in verification, downloadmode enabled
+                        {
+                            //download unverified hash images to directory
+                                
                         }
                     }
                     Console.WriteLine("image finished");
@@ -852,34 +886,7 @@ namespace Catalog
                         }
 
                         //add current path to possible paths array
-                        //kvp  text/imgtag  add all files with tag to posspath array
-                     /*   foreach(ShellFolderItem item in objFolder.Items())
-                        {
-                            if(item.ExtendedProperty("ImgTag") == "")
-                            {
-                                //the image does not contain a img tag
-                            }
-                            else
-                            {
-                                string tags = item.ExtendedProperty("ImgTag");
-
-                                if(RX.IsMatch(tags) == true)
-                                {
-
-                                MatchCollection tagmatch = RX.Matches(tags);
-
-                                    foreach(Match match1 in tagmatch)
-                                    {
-                                        //add every tag match's path to possible paths
-                                        posspaths.Append<string>(item.Path);
-
-                                    }
-                                }
-
-                            }
-                        }
-                        */
-
+                     
                     }
 
 
@@ -943,7 +950,7 @@ namespace Catalog
 
             List<LoadedThread> LThreadArray = new List<LoadedThread>();
 
-            for(int i = 0; i < 1; i++)
+            for(int i = 0; i < threadstoload; i++)
             {
                 await Task.Delay(15000);
                 var urlendpoint = _Tlist.ThreadArray[i].ThreadUrl;
@@ -1061,6 +1068,7 @@ namespace Catalog
             TD.Add("does", 2);
             TD.Add("be-me", 2);
             TD.Add("greentext", 20);
+            TD.Add("based", 20);
 
             // Filter Posts
             TD.Add("general", -90);
@@ -1136,8 +1144,12 @@ namespace Catalog
             Dictionary<string, string> TD = new Dictionary<string, string>();
 
             TD.Add("frog",$"{imagepath}\\frog");
+            TD.Add("mfw", $"{imagepath}\\reactionimages");
+            TD.Add("check'em", $"{imagepath}\\repeatingd");
+            TD.Add("feelsbadman", $"{imagepath}\\feels");
 
-   
+
+
             Console.WriteLine(" ♥ TagBank Created ♥ ");
 
             foreach (KeyValuePair<string,string> kvp in TD)
