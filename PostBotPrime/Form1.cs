@@ -31,7 +31,8 @@ namespace PostBotPrime
         public string IconDirectory = @"C:\Users\Nathan\Pictures\Icons";
         public string MusicDirectory = @"";
 
-        public int Mode = 0; //default loading mode, 0 custom playlist/ 1 top weights/ 2 pre decided playlist directory at random
+        public int Mode = 0; //default loading mode, 0 custom playlist/ 1 selected board / 2 top playlist
+        public string selectedboard = "x";
 
         //class declares
         bool Scrolling = false;
@@ -49,6 +50,7 @@ namespace PostBotPrime
         public List<_Pbox> loadedthread;
         public Dictionary<int, float> ThreadPoints;
         public string CB = "init";
+
 
         Dictionary<string,SpeechSynthesizer> loadedvoices = new Dictionary<string,SpeechSynthesizer>();
         SpeechSynthesizer activevoice = new SpeechSynthesizer();
@@ -93,7 +95,15 @@ Color.FromArgb(255, 152, 152, 255));
 Color.FromArgb(255, 152, 255, 152),   // 
 Color.FromArgb(255, 152, 152, 255));
 
+
+        LinearGradientBrush BGSpooky1 = new LinearGradientBrush(new Point(0, 0), new Point(250, 250),
+Color.FromArgb(255, 40, 20, 30),   // 
+Color.FromArgb(255, 60, 20, 255));
+
+
+
         Font stylefont;
+        Font Boardfont;
         int checker = 0;
 
         //Pen lgpen = new Pen(LGbrush);
@@ -109,8 +119,10 @@ Color.FromArgb(255, 152, 152, 255));
 
 
           Font tempfont = new Font(panel1.Font,FontStyle.Regular);
-          stylefont = tempfont;
-           
+           Font tempfont2 = new Font("GothicE",128,FontStyle.Bold);
+            stylefont = tempfont;
+            Boardfont = tempfont2;
+
 
             System.Timers.Timer Ftimer = new System.Timers.Timer(MsTicks);
             Ftimer.Elapsed += OnTimedEvent;
@@ -235,6 +247,7 @@ Color.FromArgb(255, 152, 152, 255));
                 loaded = false;
                 ScrollingMulti = 1;
                 frames = 0;
+            //    i = 0;
                 panel1.Invalidate();
                 panel1.Refresh();
             }
@@ -256,12 +269,15 @@ Color.FromArgb(255, 152, 152, 255));
                 Scrolling = false;
                 ScrollingMulti = 1;
             }
-           
+
 
             for (int i = LOWbumper; i < UPbumper; i++) // draw loaded posts
             {
-
+                if (loadedthread[i] != null)
+                {
                 DrawPost1(loadedthread[i], e);
+                }
+
 
             }
 
@@ -297,7 +313,7 @@ Color.FromArgb(255, 152, 152, 255));
                     break;
                 case 1:
                     // case 1 top playlist
-                    var files1 = Directory.GetFiles($"{LoadDirectory}//Defaultplaylist");
+                    var files1 = Directory.GetFiles($"{LoadDirectory}//{selectedboard}");
                     if (files1.Length == 0)
                     {
                         // no files in thread directory
@@ -794,13 +810,13 @@ Color.FromArgb(255, 152, 152, 255));
             voices.Add("Male3", Male3);
             voices.Add("Female1", Female1);
             voices.Add("Female2", Female2);
-            voices.Add("Female3", Female3);
+
             voices.Add("Special1", special1);
-            voices.Add("Special2", special2);
+
             voices.Add("default", Male1);
             foreach(KeyValuePair<string,SpeechSynthesizer> kvp in voices)
             {
-                kvp.Value.Rate = 10;
+                kvp.Value.Rate = 4;
                 kvp.Value.SetOutputToDefaultAudioDevice() ;
             }
             loadedvoices = voices;
@@ -955,6 +971,7 @@ Color.FromArgb(255, 152, 152, 255));
             //icon top right
             Graphics g = e.Graphics;
             Point origin = new Point(0, 0);
+            Point TextOrigin = new Point(panel2.Width/2, panel2.Height / 2);
             Size formsize = new Size((this.panel2.Width-1), (this.panel2.Height-1));
             Size formborder = new Size(this.panel2.Width, this.panel2.Height);
             Rectangle bg = new Rectangle(origin, formborder);
@@ -963,6 +980,24 @@ Color.FromArgb(255, 152, 152, 255));
 
             if (loaded != true)
             {
+                TextFormatFlags flags = TextFormatFlags.Left | TextFormatFlags.WordBreak | TextFormatFlags.VerticalCenter;
+                var currentboard = loadedthread[0].Board;
+
+                //set board realted settings
+                switch(currentboard)
+                {
+                    case "x":
+                          g.FillRectangle(BGSpooky1, bg);
+                        Size size = TextRenderer.MeasureText(g,currentboard, Boardfont,new Size(0,0),flags);
+                        TextOrigin.X = TextOrigin.X - (size.Width / 2);
+                        TextOrigin.Y = TextOrigin.Y - (10);
+
+                        TextRenderer.DrawText(g, currentboard, Boardfont, TextOrigin, Color.AntiqueWhite, Color.Transparent, flags);
+
+                        break;
+
+                }
+                    
 
                 if (IconDirectory.Equals(string.Empty)) IconDirectory = $"{Directory.GetCurrentDirectory()}\\{loadedthread[0].Board}";
                 else IconDirectory = $"{IconDirectory}";
@@ -987,14 +1022,14 @@ Color.FromArgb(255, 152, 152, 255));
 
             if (IconImage != null)
             {
-                g.DrawImage(IconImage, bg);
+       //         g.DrawImage(IconImage, bg);
             }
 
 
 
           //  g.FillRectangle(Vanbrush, bg);
            // g.DrawRectangle(mypen2, bg);
-            g.DrawRectangle(mypen, brd);
+      //      g.DrawRectangle(mypen, brd);
 
 
 

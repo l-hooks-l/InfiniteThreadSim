@@ -992,9 +992,9 @@ namespace Catalog
 
             //Bad Words
             TD.Add("nigger", -50);
-            TD.Add("Nigger", -50);
+
             TD.Add("kike", -50);
-            TD.Add("Kike", -50);
+            TD.Add("loli", -50);
 
             // board specific additions
             /*  switch (boardId)
@@ -1060,8 +1060,16 @@ namespace Catalog
             // Good Posts
             // TD.Add("?", 3);
             TD.Add("prove", 2);
+            TD.Add("jazz", 20);
+            TD.Add("funk", 17);
+            TD.Add("pill", 5);
             TD.Add("how", 2);
             TD.Add("why", 2);
+            TD.Add("happy", 2);
+            TD.Add("kek", 33);
+            TD.Add("gains", 30);
+
+
             TD.Add("when", 2);
             TD.Add("talk", 2);
             TD.Add("discussion", 2);
@@ -1075,8 +1083,9 @@ namespace Catalog
 
             //Bad Words
             TD.Add("nigger", -50);
-            TD.Add("Nigger", -50);
-            TD.Add("kike", -50);
+            TD.Add("https", -50);
+            TD.Add("caw ", -50);
+            TD.Add("loli", -50);
             TD.Add("Kike", -50);
 
             // board specific additions
